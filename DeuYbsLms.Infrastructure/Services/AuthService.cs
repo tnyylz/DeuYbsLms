@@ -1,0 +1,106 @@
+﻿// Path: DeuYbsLms.Infrastructure/Services/AuthService.cs
+
+using DeuYbsLms.Application.DTOs.Auth;
+using DeuYbsLms.Application.Interfaces.Repositories;
+using DeuYbsLms.Application.Interfaces.Services;
+using DeuYbsLms.Application.Common.Results;
+using DeuYbsLms.Domain.Entities.Identity;
+using DeuYbsLms.Domain.Enums;
+
+namespace DeuYbsLms.Infrastructure.Services;
+
+public class AuthService : IAuthService
+{
+    private readonly IUserRepository _userRepository;
+    private readonly ITokenService _tokenService;
+
+    public AuthService(IUserRepository userRepository, ITokenService tokenService)
+    {
+        _userRepository = userRepository;
+        _tokenService = tokenService;
+    }
+
+    public async Task<Result<AuthResponseDto>> RegisterAsync(RegisterRequestDto request)
+    {
+        // Email daha önce alınmış mı?
+        if (await _userRepository.IsEmailTakenAsync(request.Email))
+            return Result<AuthResponseDto>.Failure("Bu email adresi zaten kullanılıyor.");
+
+        var user = new AppUser
+        {
+            Id = Guid.NewGuid(),
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            Email = request.Email.ToLower(),
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+            Role = request.Role,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        // Öğrenci ise profil oluştur
+        if (request.Role == UserRole.Student)
+        {
+            user.StudentProfile = new StudentProfile
+            {
+                Id = Guid.NewGuid(),
+                AppUserId = user.Id,
+                TotalXp = 0,
+                CurrentLevel = 1,
+                XpToNextLevel = 100,
+                CreatedAt = DateTime.UtcNow
+            };
+        }
+
+        await _userRepository.AddAsync(user);
+
+        var token = _tokenService.GenerateToken(user);
+
+        return Result<AuthResponseDto>.Success(new AuthResponseDto
+        {
+            Token = token,
+            UserId = user.Id,
+            FullName = user.FullName,
+            Email = user.Email,
+            Role = user.Role.ToString()
+        });
+    }
+
+    public async Task<Result<AuthResponseDto>> LoginAsync(LoginRequestDto request)
+    {
+        var user = await _userRepository.GetByEmailAsync(request.Email);
+
+        if (user is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
+            return Result<AuthResponseDto>.Failure("Email veya şifre hatalı.");
+
+        var token = _tokenService.GenerateToken(user);
+
+        return Result<AuthResponseDto>.Success(new AuthResponseDto
+        {
+            Token = token,
+            UserId = user.Id,
+            FullName = user.FullName,
+            Email = user.Email,
+            Role = user.Role.ToString()
+        });
+    }
+
+    public async Task<Result<UserProfileDto>> GetProfileAsync(Guid userId)
+    {
+        var user = await _userRepository.GetUserWithProfileAsync(userId);
+
+        if (user is null)
+            return Result<UserProfileDto>.Failure("Kullanıcı bulunamadı.");
+
+        return Result<UserProfileDto>.Success(new UserProfileDto
+        {
+            Id = user.Id,
+            FullName = user.FullName,
+            Email = user.Email,
+            Role = user.Role.ToString(),
+            TotalXp = user.StudentProfile?.TotalXp ?? 0,
+            CurrentLevel = user.StudentProfile?.CurrentLevel ?? 0,
+            XpToNextLevel = user.StudentProfile?.XpToNextLevel ?? 0,
+            BadgeCount = user.StudentProfile?.EarnedBadges.Count ?? 0
+        });
+    }
+}
