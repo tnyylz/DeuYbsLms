@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.API/Controllers/ProgressController.cs
+// Path: DeuYbsLms.API/Controllers/ProgressController.cs
 // Sınıf türü: Controller (Add > Controller > API Controller - Empty)
 
 using DeuYbsLms.Application.DTOs.Progress;
@@ -55,6 +55,15 @@ public class ProgressController : ControllerBase
     public async Task<IActionResult> SubmitQuiz([FromBody] SubmitQuizDto request)
     {
         var result = await _progressService.SubmitQuizAsync(GetStudentId(), request);
+        if (!result.IsSuccess)
+            return BadRequest(result.ErrorMessage);
+        return Ok(result.Data);
+    }
+
+    [HttpGet("my-enrollments")]
+    public async Task<IActionResult> GetMyEnrollments()
+    {
+        var result = await _progressService.GetStudentEnrollmentsAsync(GetStudentId());
         if (!result.IsSuccess)
             return BadRequest(result.ErrorMessage);
         return Ok(result.Data);

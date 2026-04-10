@@ -1,4 +1,4 @@
-﻿using DeuYbsLms.Application.Interfaces.Repositories;
+using DeuYbsLms.Application.Interfaces.Repositories;
 using DeuYbsLms.Application.Interfaces.Services;
 using DeuYbsLms.Infrastructure.Persistence.Context;
 using DeuYbsLms.Infrastructure.Persistence.Repositories;
@@ -31,6 +31,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IProgressService, ProgressService>();
         services.AddScoped<IGamificationService, GamificationService>();
+        services.AddScoped<ICertificateService, CertificateService>();
 
         return services;
     }

@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Infrastructure/Services/GamificationService.cs
+// Path: DeuYbsLms.Infrastructure/Services/GamificationService.cs
 
 using DeuYbsLms.Application.DTOs.Gamification;
 using DeuYbsLms.Application.Interfaces.Repositories;
@@ -29,10 +29,10 @@ public class GamificationService : IGamificationService
         _enrollmentRepository = enrollmentRepository;
     }
 
-    public async Task AwardXpAsync(Guid studentId, int xpAmount, string reason)
+    public async Task<int> AwardXpAsync(Guid studentId, int xpAmount, string reason)
     {
         var profile = await _profileRepository.GetAsync(sp => sp.AppUserId == studentId);
-        if (profile is null) return;
+        if (profile is null) return 0;
 
         await _xpRepository.AddAsync(new XpTransaction
         {
@@ -53,6 +53,7 @@ public class GamificationService : IGamificationService
         }
 
         await _profileRepository.UpdateAsync(profile);
+        return xpAmount;
     }
 
     public async Task CheckAndAwardBadgesAsync(Guid studentId)
@@ -105,25 +106,64 @@ public class GamificationService : IGamificationService
         var recentXp = await _xpRepository
             .GetAllAsync(xt => xt.StudentProfileId == profile.Id);
 
+        // XP Progress Percent hesaplama
+        double xpProgressPercent = profile.XpToNextLevel > 0
+            ? Math.Round((double)profile.TotalXp / profile.XpToNextLevel * 100, 1)
+            : 0;
+
+        // Rank hesaplama - tüm profilleri XP'ye göre sıralayıp pozisyon bulma
+        var allProfiles = await _profileRepository.GetAllAsync(_ => true);
+        var sortedProfiles = allProfiles.OrderByDescending(p => p.TotalXp).ToList();
+        int rank = sortedProfiles.FindIndex(p => p.Id == profile.Id) + 1;
+        if (rank == 0) rank = sortedProfiles.Count;
+
+        // CompletedQuizCount hesaplama
+        var enrollments = await _enrollmentRepository.GetStudentEnrollmentsAsync(studentId);
+        int completedQuizCount = enrollments
+            .SelectMany(e => e.LessonProgresses)
+            .Count(lp => lp.IsQuizPassed);
+
         return Result<StudentGamificationDto>.Success(new StudentGamificationDto
         {
             TotalXp = profile.TotalXp,
             CurrentLevel = profile.CurrentLevel,
             XpToNextLevel = profile.XpToNextLevel,
-            Badges = badges.Select(b => new BadgeDto
-            {
-                BadgeType = b.BadgeType.ToString(),
-                EarnedAt = b.EarnedAt
-            }).ToList(),
+            XpProgressPercent = xpProgressPercent,
+            Rank = rank,
+            CompletedQuizCount = completedQuizCount,
+            Badges = badges.Select(b => MapBadgeToDto(b)).ToList(),
             RecentXpTransactions = recentXp
             .OrderByDescending(x => x.CreatedAt)
             .Take(10)
             .Select(x => new XpTransactionDto
             {
-                Amount = x.Amount,
+                Amount = x.XpAmount,
                 Reason = x.Reason,
                 EarnedAt = x.CreatedAt
             }).ToList()
         });
+    }
+
+    private static BadgeDto MapBadgeToDto(UserBadge badge)
+    {
+        var (displayName, description, emoji) = badge.BadgeType switch
+        {
+            BadgeType.FirstBlood => ("İlk Adım", "İlk kursuna kayıt oldun!", "🚀"),
+            BadgeType.Flawless => ("Kusursuz", "Bir quiz'den tam puan aldın!", "💎"),
+            BadgeType.CourseCompleter => ("Kurs Tamamlayıcı", "İlk kursunu tamamladın!", "🎓"),
+            BadgeType.Speedrunner => ("Hızlı Öğrenen", "Kursunu hızla tamamladın!", "⚡"),
+            BadgeType.Persistent => ("Azimli", "3 kursu tamamladın!", "🔥"),
+            BadgeType.Overachiever => ("Üstün Başarı", "5 kursu tamamladın!", "🏆"),
+            _ => (badge.BadgeType.ToString(), "", "🎖️")
+        };
+
+        return new BadgeDto
+        {
+            BadgeType = badge.BadgeType.ToString(),
+            DisplayName = displayName,
+            Description = description,
+            IconEmoji = emoji,
+            EarnedAt = badge.EarnedAt
+        };
     }
 }

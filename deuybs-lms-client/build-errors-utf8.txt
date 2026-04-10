@@ -1,0 +1,4 @@
+﻿src/api/progress.api.ts(4,49): error TS2305: Module '"../types"' has no exported member 'Result'.
+src/pages/student/SkillTreePage.tsx(4,34): error TS6133: 'Link' is declared but its value is never read.
+src/pages/teacher/CourseBuilder.tsx(7,36): error TS6196: 'CreateQuestionRequest' is declared but never used.
+src/pages/teacher/CourseBuilder.tsx(7,59): error TS6196: 'CreateOptionRequest' is declared but never used.

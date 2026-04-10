@@ -2,7 +2,11 @@
 
 using DeuYbsLms.Application;
 using DeuYbsLms.Infrastructure.Extensions;
+using DeuYbsLms.Infrastructure.Persistence;
+using DeuYbsLms.Infrastructure.Persistence.Context;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using DeuYbsLms.Infrastructure.Persistence;
+using DeuYbsLms.Infrastructure.Persistence.Context;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
@@ -85,4 +89,10 @@ app.UseCors("AllowAll");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+// npx shadcn@latest init Data
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await DbInitializer.SeedAsync(context);
+}
 app.Run();

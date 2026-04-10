@@ -36,7 +36,7 @@ public class CourseController : ControllerBase
         var course = await _courseRepository.GetCourseWithDetailsAsync(id);
         if (course is null)
             return NotFound("Kurs bulunamadı.");
-        var result = _mapper.Map<CourseDto>(course);
+        var result = _mapper.Map<CourseDetailDto>(course);
         return Ok(result);
     }
 

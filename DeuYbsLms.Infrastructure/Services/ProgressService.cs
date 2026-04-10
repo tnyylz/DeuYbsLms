@@ -1,11 +1,9 @@
-﻿// Path: DeuYbsLms.Infrastructure/Services/ProgressService.cs
+// Path: DeuYbsLms.Infrastructure/Services/ProgressService.cs
 
 using DeuYbsLms.Application.Common.Results;
-using DeuYbsLms.Application.DTOs.Gamification;
 using DeuYbsLms.Application.DTOs.Progress;
 using DeuYbsLms.Application.Interfaces.Repositories;
 using DeuYbsLms.Application.Interfaces.Services;
-using DeuYbsLms.Domain.Entities.Course;
 using DeuYbsLms.Domain.Entities.Progress;
 
 namespace DeuYbsLms.Infrastructure.Services;
@@ -17,12 +15,16 @@ public class ProgressService : IProgressService
     private readonly ILessonRepository _lessonRepository;
     private readonly IGamificationService _gamificationService;
 
-    public interface IProgressService
+    public ProgressService(
+        IEnrollmentRepository enrollmentRepository,
+        IProgressRepository progressRepository,
+        ILessonRepository lessonRepository,
+        IGamificationService gamificationService)
     {
-        Task<Result<bool>> EnrollStudentAsync(Guid studentId, Guid courseId);
-        Task<Result<CourseProgressDto>> GetCourseProgressAsync(Guid studentId, Guid courseId);
-        Task<Result<LessonProgressDto>> CompleteVideoAsync(Guid studentId, Guid lessonId);
-        Task<Result<QuizResultDto>> SubmitQuizAsync(Guid studentId, SubmitQuizDto request);
+        _enrollmentRepository = enrollmentRepository;
+        _progressRepository = progressRepository;
+        _lessonRepository = lessonRepository;
+        _gamificationService = gamificationService;
     }
 
     public async Task<Result<CourseProgressDto>> GetCourseProgressAsync(Guid studentId, Guid courseId)
@@ -91,8 +93,7 @@ public class ProgressService : IProgressService
             progress.VideoCompletedAt = DateTime.UtcNow;
             await _progressRepository.UpdateAsync(progress);
 
-            // Video tamamlama XP'si
-            await _gamificationService.AwardXpAsync(studentId, 10, $"Video tamamlandı: {lesson.Title}");
+            await _gamificationService.AwardXpAsync(studentId, lesson.XpReward, $"Video tamamlandı: {lesson.Title}");
         }
 
         return Result<LessonProgressDto>.Success(MapToDto(progress, lesson.Title, lesson.OrderIndex));
@@ -123,14 +124,10 @@ public class ProgressService : IProgressService
 
         foreach (var question in quiz.Questions)
         {
-            var studentAnswer = request.Answers
-                .FirstOrDefault(a => a.QuestionId == question.Id);
-
+            var studentAnswer = request.Answers.FirstOrDefault(a => a.QuestionId == question.Id);
             if (studentAnswer is null) continue;
 
-            var correctOption = question.AnswerOptions
-                .FirstOrDefault(ao => ao.IsCorrect);
-
+            var correctOption = question.AnswerOptions.FirstOrDefault(ao => ao.IsCorrect);
             if (correctOption?.Id == studentAnswer.SelectedAnswerOptionId)
                 correctCount++;
         }
@@ -145,35 +142,50 @@ public class ProgressService : IProgressService
         progress.QuizAttemptCount++;
         progress.LastQuizScore = score;
 
-        if (isPassed && !progress.IsQuizPassed)
+        Guid? nextLessonId = null;
+        bool nextLessonUnlocked = false;
+        int xpEarned = 0;
+
+        bool justPassed = isPassed && !progress.IsQuizPassed;
+
+        if (justPassed)
         {
             progress.IsQuizPassed = true;
             progress.QuizPassedAt = DateTime.UtcNow;
 
-            // Sonraki dersi aç
+            var nextLesson = await _lessonRepository.GetNextLessonAsync(lesson.CourseId, lesson.OrderIndex);
+            if (nextLesson is not null)
+            {
+                nextLessonId = nextLesson.Id;
+                nextLessonUnlocked = true;
+            }
+
             await UnlockNextLessonAsync(enrollment, lesson.OrderIndex);
 
-            // Quiz geçme XP'si
-            await _gamificationService.AwardXpAsync(studentId, 25, $"Quiz geçildi: {lesson.Title}");
-
-            // Kurs tamamlandı mı kontrol et
-            await CheckCourseCompletionAsync(enrollment, studentId);
+            xpEarned = await _gamificationService.AwardXpAsync(studentId, lesson.XpReward, $"Quiz geçildi: {lesson.Title}");
         }
 
-        await _progressRepository.UpdateAsync(progress);
+        await _progressRepository.UpdateAsync(progress); // önce DB'ye yaz
+
+        if (justPassed)
+            await CheckCourseCompletionAsync(enrollment, studentId); // sonra kontrol et
 
         return Result<QuizResultDto>.Success(new QuizResultDto
         {
             LessonId = request.LessonId,
             Score = score,
-            IsPassed = isPassed,    
+            IsPassed = isPassed,
             CorrectAnswers = correctCount,
             TotalQuestions = quiz.Questions.Count,
             MinimumPassingScore = quiz.MinimumPassingScore,
             AttemptCount = progress.QuizAttemptCount,
+            NextLessonUnlocked = nextLessonUnlocked,
+            NextLessonId = nextLessonId,
+            XpEarned = xpEarned,
+            IsCourseCompleted = enrollment.IsCourseCompleted, // ✅ burası güncellendi
             Message = isPassed
-                ? "Tebrikler! Quiz'i geçtiniz. 🎉"
-                : $"Başarısız. Puanınız: {score}. Geçme puanı: {quiz.MinimumPassingScore}"
+         ? "Tebrikler! Quiz'i geçtiniz. 🎉"
+         : $"Başarısız. Puanınız: {score}. Geçme puanı: {quiz.MinimumPassingScore}"
         });
     }
 
@@ -193,7 +205,6 @@ public class ProgressService : IProgressService
 
         await _enrollmentRepository.AddAsync(enrollment);
 
-        // İlk dersi otomatik aç
         var lessons = await _lessonRepository.GetCourseLessonsOrderedAsync(courseId);
         if (lessons.Any())
         {
@@ -202,13 +213,12 @@ public class ProgressService : IProgressService
                 Id = Guid.NewGuid(),
                 EnrollmentId = enrollment.Id,
                 LessonId = lessons.First().Id,
-                IsUnlocked = true, // İlk ders her zaman açık
+                IsUnlocked = true,
                 CreatedAt = DateTime.UtcNow
             };
             await _progressRepository.AddAsync(firstProgress);
         }
 
-        // Kayıt XP'si
         await _gamificationService.AwardXpAsync(studentId, 5, "Kursa kayıt olundu");
 
         return Result<bool>.Success(true);
@@ -255,10 +265,27 @@ public class ProgressService : IProgressService
             enrollment.CompletedAt = DateTime.UtcNow;
             await _enrollmentRepository.UpdateAsync(enrollment);
 
-            // Kurs tamamlama XP + rozet
             await _gamificationService.AwardXpAsync(studentId, 100, "Kurs tamamlandı!");
             await _gamificationService.CheckAndAwardBadgesAsync(studentId);
         }
+    }
+
+    public async Task<Result<List<EnrollmentDto>>> GetStudentEnrollmentsAsync(Guid studentId)
+    {
+        var enrollments = await _enrollmentRepository.GetStudentEnrollmentsAsync(studentId);
+
+        var enrollmentDtos = enrollments.Select(e => new EnrollmentDto
+        {
+            EnrollmentId = e.Id,
+            CourseId = e.CourseId,
+            CourseTitle = e.Course.Title,
+            EnrolledAt = e.EnrolledAt,
+            IsCourseCompleted = e.IsCourseCompleted,
+            CompletedLessonsCount = e.LessonProgresses.Count(lp => lp.IsQuizPassed),
+            TotalLessonsCount = e.Course.Lessons.Count
+        }).ToList();
+
+        return Result<List<EnrollmentDto>>.Success(enrollmentDtos);
     }
 
     private static LessonProgressDto MapToDto(LessonProgress lp, string title, int orderIndex) =>
@@ -273,6 +300,4 @@ public class ProgressService : IProgressService
             LastQuizScore = lp.LastQuizScore,
             QuizAttemptCount = lp.QuizAttemptCount
         };
-
-    
 }

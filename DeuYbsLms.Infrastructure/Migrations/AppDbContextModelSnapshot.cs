@@ -522,8 +522,8 @@ namespace DeuYbsLms.Infrastructure.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
 
-                    b.Property<int?>("LastQuizScore")
-                        .HasColumnType("int");
+                    b.Property<double?>("LastQuizScore")
+                        .HasColumnType("float");
 
                     b.Property<Guid>("LessonId")
                         .HasColumnType("uniqueidentifier");

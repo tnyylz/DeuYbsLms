@@ -16,5 +16,5 @@ public class XpTransaction : BaseEntity
     public int XpAmount { get; set; }
     public string Reason { get; set; } = string.Empty; // "SQL'e Giriş dersi tamamlandı"
     public Guid? SourceEntityId { get; set; }          // Hangi Lesson/Course tetikledi
-    public int Amount { get; set; }
+    
 }

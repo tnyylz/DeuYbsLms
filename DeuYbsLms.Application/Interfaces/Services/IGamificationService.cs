@@ -7,7 +7,7 @@ namespace DeuYbsLms.Application.Interfaces.Services;
 
 public interface IGamificationService
 {
-    Task AwardXpAsync(Guid studentId, int xpAmount, string reason);
+    Task<int> AwardXpAsync(Guid studentId, int xpAmount, string reason);
     Task CheckAndAwardBadgesAsync(Guid studentId);
     Task<Result<StudentGamificationDto>> GetStudentGamificationAsync(Guid studentId);
 }
