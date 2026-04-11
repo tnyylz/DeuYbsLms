@@ -5,8 +5,6 @@ using DeuYbsLms.Infrastructure.Extensions;
 using DeuYbsLms.Infrastructure.Persistence;
 using DeuYbsLms.Infrastructure.Persistence.Context;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using DeuYbsLms.Infrastructure.Persistence;
-using DeuYbsLms.Infrastructure.Persistence.Context;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
@@ -38,9 +36,13 @@ builder.Services.AddAuthentication(options =>
 });
 
 builder.Services.AddAuthorization();
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+    });
 
-// Swagger — JWT token giriþi destekli
+// Swagger â€” JWT token giriÅŸi destekli
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -70,7 +72,7 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// CORS — Frontend için
+// CORS â€” Frontend iÃ§in
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -86,6 +88,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseCors("AllowAll");
+app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

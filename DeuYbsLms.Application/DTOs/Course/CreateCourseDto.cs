@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Application/DTOs/Course/CreateCourseDto.cs
+// Path: DeuYbsLms.Application/DTOs/Course/CreateCourseDto.cs
 
 using DeuYbsLms.Domain.Enums;
 
@@ -13,4 +13,5 @@ public class CreateCourseDto
     public CourseLevel Level { get; set; }
     public int TotalXpReward { get; set; } = 500;
     public List<string> Tags { get; set; } = new();
+    public bool IsPublished { get; set; }
 }

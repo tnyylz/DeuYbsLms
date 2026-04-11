@@ -15,15 +15,19 @@ import CourseDetailPage from './pages/student/CourseDetailPage';
 import SkillTreePage from './pages/student/SkillTreePage';
 import LearningRoom from './pages/student/LearningRoom';
 import CertificatesPage from './pages/student/CertificatesPage';
+import ProfilePage from './pages/student/ProfilePage';
 
 // Teacher
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
 import CourseBuilder from './pages/teacher/CourseBuilder';
 import AnalyticsPage from './pages/teacher/AnalyticsPage';
 
+import { Toaster } from 'react-hot-toast';
+
 export default function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-center" reverseOrder={false} />
       <Routes>
         {/* Public */}
         <Route path="/" element={<LandingPage />} />
@@ -37,6 +41,7 @@ export default function App() {
         <Route path="/course/:courseId/skill-tree" element={<ProtectedRoute role="Student"><SkillTreePage /></ProtectedRoute>} />
         <Route path="/course/:courseId/lesson/:lessonId" element={<ProtectedRoute role="Student"><LearningRoom /></ProtectedRoute>} />
         <Route path="/student/certificates" element={<ProtectedRoute role="Student"><CertificatesPage /></ProtectedRoute>} />
+        <Route path="/student/profile" element={<ProtectedRoute role="Student"><ProfilePage /></ProtectedRoute>} />
 
         {/* Teacher */}
         <Route path="/teacher/dashboard" element={<ProtectedRoute role="Teacher"><TeacherDashboard /></ProtectedRoute>} />

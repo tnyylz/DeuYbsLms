@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Application/Interfaces/Services/IGamificationService.cs
+// Path: DeuYbsLms.Application.Interfaces.Services/IGamificationService.cs
 
 using DeuYbsLms.Application.Common.Results;
 using DeuYbsLms.Application.DTOs.Gamification;
@@ -10,4 +10,5 @@ public interface IGamificationService
     Task<int> AwardXpAsync(Guid studentId, int xpAmount, string reason);
     Task CheckAndAwardBadgesAsync(Guid studentId);
     Task<Result<StudentGamificationDto>> GetStudentGamificationAsync(Guid studentId);
+    Task<Result<List<LeaderboardDto>>> GetLeaderboardAsync(int top = 10);
 }

@@ -68,8 +68,8 @@ export default function VideoPlayer({ videoUrl, onVideoComplete }: Props) {
     }
   };
 
-  // YouTube embed kontrolü
-  const isYoutube = videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be');
+  // YouTube embed kontrolü - videoUrl varsa kontrol et, yoksa false
+  const isYoutube = videoUrl?.includes('youtube.com') || videoUrl?.includes('youtu.be') || false;
 
   if (isYoutube) {
     const videoId = videoUrl.includes('youtu.be')

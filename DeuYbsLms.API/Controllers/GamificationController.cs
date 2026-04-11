@@ -1,5 +1,4 @@
-﻿// Path: DeuYbsLms.API/Controllers/GamificationController.cs
-// Sınıf türü: Controller (Add > Controller > API Controller - Empty)
+// Path: DeuYbsLms.API/Controllers/GamificationController.cs
 
 using DeuYbsLms.Application.Interfaces.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -27,6 +26,15 @@ public class GamificationController : ControllerBase
         var result = await _gamificationService.GetStudentGamificationAsync(studentId);
         if (!result.IsSuccess)
             return NotFound(result.ErrorMessage);
+        return Ok(result.Data);
+    }
+
+    [HttpGet("leaderboard")]
+    public async Task<IActionResult> GetLeaderboard([FromQuery] int top = 10)
+    {
+        var result = await _gamificationService.GetLeaderboardAsync(top);
+        if (!result.IsSuccess)
+            return BadRequest(result.ErrorMessage);
         return Ok(result.Data);
     }
 }

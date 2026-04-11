@@ -10,6 +10,8 @@ public class StudentGamificationDto
     public double XpProgressPercent { get; set; }
     public int Rank { get; set; }
     public int CompletedQuizCount { get; set; }
+    public int CurrentStreak { get; set; }
+    public double XpMultiplier { get; set; }
     public List<BadgeDto> Badges { get; set; } = new();
     public List<XpTransactionDto> RecentXpTransactions { get; set; } = new();
 }

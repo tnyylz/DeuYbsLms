@@ -1,10 +1,11 @@
 // Path: src/pages/student/CourseDetailPage.tsx
 
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { BookOpen, Zap, ChevronLeft, Play, Clock, CheckCircle } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { BookOpen, Zap, ChevronLeft, Play, Clock, CheckCircle, Award, Target, Info, Loader2 } from 'lucide-react';
 import { getCourseDetailApi } from '../../api/courses.api';
 import { getCourseProgressApi, enrollApi } from '../../api/progress.api';
+import { getFileUrl } from '../../utils/fileUtils';
 import type { CourseDetailDto, CourseProgressDto } from '../../types';
 
 export default function CourseDetailPage() {
@@ -16,26 +17,26 @@ export default function CourseDetailPage() {
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!courseId) return;
+  const fetchData = async () => {
+    if (!courseId) return;
+    try {
+      const courseData = await getCourseDetailApi(courseId);
+      setCourse(courseData);
+      
       try {
-        const courseData = await getCourseDetailApi(courseId);
-        setCourse(courseData);
-        
-        try {
-          const progressData = await getCourseProgressApi(courseId);
-          setProgress(progressData);
-        } catch (err) {
-          // Öğrenci bu kursa kayıtlı değil
-          setProgress(null);
-        }
+        const progressData = await getCourseProgressApi(courseId);
+        setProgress(progressData);
       } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
+        setProgress(null);
       }
-    };
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, [courseId]);
 
@@ -44,8 +45,8 @@ export default function CourseDetailPage() {
     setEnrolling(true);
     try {
       await enrollApi(courseId);
-      // Başarılı kayıttan sonra skill tree'ye yönlendir
-      navigate(`/course/${courseId}/skill-tree`);
+      // Başarılı kayıttan sonra sayfayı yenile (stateler güncellensin)
+      await fetchData();
     } catch (err) {
       console.error(err);
     } finally {
@@ -56,7 +57,7 @@ export default function CourseDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+        <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -64,139 +65,221 @@ export default function CourseDetailPage() {
   if (!course) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
-          <BookOpen className="mx-auto mb-4 text-slate-300" size={48} />
-          <h2 className="text-xl font-bold text-slate-800 mb-2">Kurs Bulunamadı</h2>
-           <Link to="/courses" className="text-indigo-600 hover:underline">Kurslara Dön</Link>
+        <div className="text-center bg-white p-12 rounded-[32px] shadow-xl border border-slate-200 max-w-md mx-6">
+          <BookOpen className="text-slate-200 mx-auto mb-6" size={64} />
+          <h2 className="text-2xl font-bold text-slate-800 mb-2">Kurs Bulunamadı</h2>
+          <button onClick={() => navigate('/courses')} className="mt-6 text-indigo-600 font-bold hover:underline">Kurslara Dön</button>
         </div>
       </div>
     );
   }
 
+  const isEnrolled = !!progress;
+  
+  // Bulunması gereken ders: İlk tamamlanmamış ders veya ilk ders
+  const getNextLessonId = () => {
+    if (!progress || !course) return course?.lessons[0]?.id;
+    const nextIncomplete = progress.lessonProgresses.find(lp => !lp.isVideoCompleted);
+    return nextIncomplete ? nextIncomplete.lessonId : course.lessons[0].id;
+  };
+
   const totalDurationStr = (() => {
     const totalSec = course.lessons.reduce((acc, curr) => acc + curr.durationInSeconds, 0);
     const min = Math.ceil(totalSec / 60);
-    if (min < 60) return `${min} dk`;
-    return `${Math.floor(min / 60)} sa ${min % 60} dk`;
+    if (min < 60) return `${min} dakika`;
+    return `${Math.floor(min / 60)} saat ${min % 60} dakika`;
   })();
 
-  const isEnrolled = !!progress;
-
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
-      <nav className="bg-white border-b border-slate-200 px-6 py-4 shadow-sm sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto flex items-center gap-3">
-          <button onClick={() => navigate('/courses')} className="text-slate-500 hover:text-indigo-600 transition-colors">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-20">
+      <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200 px-6 py-4 shadow-sm sticky top-0 z-20">
+        <div className="max-w-7xl mx-auto flex items-center gap-4">
+          <button onClick={() => navigate('/courses')} className="p-2 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-indigo-600 transition-all cursor-pointer">
             <ChevronLeft size={20} />
           </button>
-          <div className="bg-indigo-50 p-2 rounded-lg">
-            <BookOpen className="text-indigo-600" size={20} />
+          <div className="flex items-center gap-2">
+            <div className="bg-indigo-600 p-2 rounded-xl shadow-lg shadow-indigo-200">
+              <BookOpen className="text-white" size={20} />
+            </div>
+            <span className="font-bold tracking-tight text-slate-900 text-xl">
+              DEÜ YBS <span className="text-indigo-600">LMS</span>
+            </span>
           </div>
-          <span className="font-bold tracking-tight text-slate-900 text-lg">
-            DEÜ YBS <span className="text-indigo-600">LMS</span>
-          </span>
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <div className="bg-white border-b border-slate-200 py-12 px-6">
-        <div className="max-w-5xl mx-auto grid md:grid-cols-3 gap-10">
-          <div className="md:col-span-2 space-y-6">
-            <span className="inline-block px-3 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-md uppercase tracking-wide border border-indigo-100">
-              {course.level}
-            </span>
-            <h1 className="text-4xl font-bold text-slate-900 leading-tight">
-              {course.title}
-            </h1>
-            <p className="text-lg text-slate-600 leading-relaxed max-w-2xl">
-              {course.description}
-            </p>
-            <div className="flex flex-wrap items-center gap-6 text-sm font-semibold text-slate-500">
-              <span className="flex items-center gap-1.5"><BookOpen size={18} /> {course.lessons.length} Ders</span>
-              <span className="flex items-center gap-1.5"><Clock size={18} /> {totalDurationStr}</span>
-              <span className="flex items-center gap-1.5 text-amber-500"><Zap size={18} fill="currentColor" /> Toplam {course.totalXpReward} XP</span>
-              <span className="text-slate-400">|</span>
-              <span className="text-slate-700">Eğitmen: <span className="text-indigo-600">{course.teacherName}</span></span>
-            </div>
-          </div>
-          
-          <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100 shadow-sm flex flex-col justify-center h-full">
-            {isEnrolled ? (
-              <div className="text-center space-y-5">
-                <div className="w-16 h-16 bg-emerald-50 text-emerald-600 mx-auto rounded-full flex items-center justify-center border border-emerald-100 mb-2">
-                  <CheckCircle size={32} />
-                </div>
-                <div>
-                   <h3 className="font-bold text-slate-900 mb-1">Bu Kursa Kayıtlısınız</h3>
-                   <p className="text-sm text-slate-500">
-                     İlerlemeniz: %{progress.completionPercentage} ({progress.completedLessons} / {progress.totalLessons} ders)
-                   </p>
-                </div>
-                <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
-                  <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${progress.completionPercentage}%` }}></div>
-                </div>
-                <button 
-                  onClick={() => navigate(`/course/${courseId}/skill-tree`)}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3.5 px-6 rounded-xl transition-all shadow-md mt-2 flex items-center justify-center gap-2"
-                >
-                  <Play size={18} fill="currentColor" />
-                  Eğitime Devam Et
-                </button>
+      <div className="max-w-7xl mx-auto px-6 pt-12">
+        <div className="grid lg:grid-cols-3 gap-12">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-8">
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <span className="px-3 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded-lg uppercase tracking-wider border border-indigo-100/50">
+                  {course.level}
+                </span>
+                <span className="px-3 py-1 bg-amber-50 text-amber-700 text-[10px] font-bold rounded-lg uppercase tracking-wider border border-amber-100/50 flex items-center gap-1">
+                  <Zap size={10} fill="currentColor" /> {course.totalXpReward} XP
+                </span>
               </div>
-            ) : (
-              <div className="text-center space-y-4">
-                <h3 className="font-extrabold text-2xl text-slate-900">Ücretsiz</h3>
-                <p className="text-sm text-slate-500 mb-4">Hemen kayıt olun, XP puanları ve rozetler kazanmaya başlayın.</p>
-                <button 
-                   onClick={handleEnroll}
-                   disabled={enrolling}
-                   className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-75 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-md shadow-indigo-600/20"
-                >
-                  {enrolling ? 'İşleniyor...' : 'Hemen Kayıt Ol'}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+              
+              <h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
+                {course.title}
+              </h1>
 
-      {/* Content Section */}
-      <div className="max-w-5xl mx-auto px-6 py-12">
-        <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-          <BookOpen className="text-indigo-600" size={24} /> 
-          Kurs İçeriği
-        </h2>
-        
-        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-          {course.lessons.map((lesson, idx) => (
-             <div key={lesson.id} className={`flex items-start md:items-center gap-4 p-5 ${idx !== course.lessons.length - 1 ? 'border-b border-slate-100' : ''}`}>
-                <div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 text-slate-500 font-bold flex items-center justify-center shrink-0">
-                  {lesson.orderIndex}
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-slate-900 text-base">{lesson.title}</h3>
-                  <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-500 font-semibold">
-                    <span>{Math.ceil(lesson.durationInSeconds / 60)} dakika</span>
-                    {lesson.hasQuiz && (
-                      <>
-                        <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                        <span className="text-indigo-600">Quiz Mevcut</span>
-                      </>
-                    )}
-                    <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                    <span className="text-amber-500 flex items-center gap-0.5"><Zap size={10} fill="currentColor"/> {lesson.xpReward} XP</span>
+              <div className="flex flex-wrap items-center gap-8 py-2 border-y border-slate-200/60">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold border border-indigo-100">
+                    {course.teacherName.charAt(0)}
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold italic">Eğitmen</p>
+                    <p className="font-bold text-slate-900">{course.teacherName}</p>
                   </div>
                 </div>
+
+                <div className="flex items-center gap-6 text-sm font-bold text-slate-500">
+                  <span className="flex items-center gap-2"><BookOpen size={18} className="text-indigo-500"/> {course.lessons.length} Ders</span>
+                  <span className="flex items-center gap-2"><Clock size={18} className="text-indigo-500"/> {totalDurationStr}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Thumbnail Header for Student */}
+            {course.thumbnailUrl ? (
+              <div className="w-full h-80 rounded-[40px] overflow-hidden border border-slate-200 shadow-xl">
+                 <img src={getFileUrl(course.thumbnailUrl)} alt={course.title} className="w-full h-full object-cover" />
+              </div>
+            ) : null}
+
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+                <div className="p-2 bg-indigo-50 rounded-xl text-indigo-600">
+                  <Info size={20} />
+                </div>
+                Kurs Hakkında
+              </h2>
+              <div className="bg-white rounded-[32px] p-8 md:p-10 border border-slate-200 shadow-sm leading-relaxed text-lg text-slate-600 whitespace-pre-wrap">
+                {course.description}
+              </div>
+            </div>
+
+            <div className="space-y-6">
+              <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
+                <div className="p-2 bg-indigo-50 rounded-xl text-indigo-600">
+                  <Target size={20} />
+                </div>
+                Müfredat {isEnrolled ? 'Erişimi' : 'Önizleme'}
+              </h2>
+              <div className="bg-white rounded-[32px] border border-slate-200 shadow-sm overflow-hidden">
+                {course.lessons.map((lesson, idx) => {
+                  const lessonProgress = progress?.lessonProgresses.find(lp => lp.lessonId === lesson.id);
+                  const isCompleted = lessonProgress?.isVideoCompleted;
+                  const canAccess = isEnrolled && (lessonProgress?.isUnlocked || idx === 0);
+
+                   return (
+                    <div 
+                      key={lesson.id} 
+                      onClick={() => canAccess && navigate(`/course/${courseId}/lesson/${lesson.id}`)}
+                      className={`p-6 flex items-center gap-5 transition-all ${canAccess ? 'cursor-pointer hover:bg-indigo-50/50' : 'opacity-60'} ${idx !== course.lessons.length - 1 ? 'border-b border-slate-100' : ''}`}
+                    >
+                        <div className={`w-10 h-10 rounded-2xl border font-bold flex items-center justify-center shrink-0 ${isCompleted ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
+                          {isCompleted ? <CheckCircle size={20} /> : lesson.orderIndex}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className={`font-bold transition-colors ${canAccess ? 'text-slate-800' : 'text-slate-400'}`}>{lesson.title}</h3>
+                          <p className="text-xs text-slate-400 mt-1 flex items-center gap-3 font-semibold">
+                            <span className="flex items-center gap-1"><Clock size={12}/> {Math.ceil(lesson.durationInSeconds / 60)} dk</span>
+                            {lesson.hasQuiz && <span className="text-indigo-500 bg-indigo-50 px-1.5 rounded-md">Quiz</span>}
+                            <span className="text-amber-500">+{lesson.xpReward} XP</span>
+                          </p>
+                        </div>
+                        {isEnrolled && !canAccess && (
+                          <div className="text-slate-300">
+                            <Zap size={20} className="grayscale" />
+                          </div>
+                        )}
+                        {canAccess && (
+                           <div className="text-indigo-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Play size={18} fill="currentColor" />
+                           </div>
+                        )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            <div className="sticky top-28 bg-white rounded-[40px] p-8 border border-slate-200 shadow-2xl shadow-indigo-100/50 space-y-8 overflow-hidden relative">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50"></div>
+              
+              <div className="relative text-center space-y-2">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">{isEnrolled ? 'Eğitim Durumu' : 'Ücretsiz Erişim'}</p>
+                <h3 className="text-5xl font-black text-slate-900 tracking-tight">{isEnrolled ? `%${progress?.completionPercentage}` : 'Ücretsiz'}</h3>
+                <p className="text-slate-400 text-sm font-medium pt-2">
+                  {isEnrolled ? 'Kursu tamamlama oranınız' : 'Hemen kaydolun ve öğrenmeye başlayın.'}
+                </p>
+              </div>
+
+              <div className="relative space-y-4">
+                {isEnrolled ? (
+                   <button 
+                    onClick={() => navigate(`/course/${courseId}/lesson/${getNextLessonId()}`)}
+                    className="w-full bg-slate-900 border-2 border-slate-900 hover:bg-slate-800 text-white font-bold py-5 px-6 rounded-[24px] transition-all flex items-center justify-center gap-3 shadow-xl hover:-translate-y-1"
+                  >
+                    <Play size={20} fill="currentColor" />
+                    {progress?.completionPercentage === 0 ? 'Eğitime Başla' : 'Derse Devam Et'}
+                  </button>
+                ) : (
+                  <button 
+                    onClick={handleEnroll}
+                    disabled={enrolling}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold py-5 px-6 rounded-[24px] transition-all flex items-center justify-center gap-3 shadow-xl shadow-indigo-200 hover:-translate-y-1 relative group"
+                  >
+                    {enrolling ? (
+                      <Loader2 size={24} className="animate-spin" />
+                    ) : (
+                      <>
+                        <Award size={20} />
+                        <span>Hemen Kayıt Ol</span>
+                      </>
+                    )}
+                  </button>
+                )}
                 
-                {isEnrolled && (() => {
-                  const lp = progress.lessonProgresses.find(p => p.lessonId === lesson.id);
-                  if (lp?.isQuizPassed) return <CheckCircle className="text-emerald-500 shrink-0" size={20} />;
-                  if (lp?.isVideoCompleted) return <span className="text-xs font-semibold px-2 py-1 bg-indigo-50 text-indigo-700 rounded-md shrink-0">Video bitti</span>;
-                  return null;
-                })()}
-             </div>
-          ))}
+                <p className="text-[10px] text-slate-400 text-center font-bold uppercase tracking-widest">Ömür boyu erişim</p>
+              </div>
+
+              <div className="relative pt-6 border-t border-slate-100 flex items-center justify-center gap-8">
+                 <div className="text-center">
+                    <p className="text-xl font-bold text-slate-800">{course.lessons.length}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">Ders</p>
+                 </div>
+                 <div className="w-px h-8 bg-slate-100"></div>
+                 <div className="text-center">
+                    <p className="text-xl font-bold text-slate-800">{Math.ceil(course.lessons.reduce((acc, c) => acc + c.durationInSeconds, 0) / 3600)}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">Saat</p>
+                 </div>
+                 <div className="w-px h-8 bg-slate-100"></div>
+                 <div className="text-center">
+                    <p className="text-xl font-bold text-slate-800">{course.totalXpReward}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase">XP</p>
+                 </div>
+              </div>
+            </div>
+
+            <div className="bg-amber-50 rounded-[32px] p-6 border border-amber-100/50 flex items-start gap-4">
+               <div className="bg-white p-2 rounded-xl text-amber-500 shadow-sm shrink-0">
+                  <Zap size={20} fill="currentColor" />
+               </div>
+               <div>
+                  <p className="font-bold text-amber-900 text-sm">XP Kazanma Şansı!</p>
+                  <p className="text-xs text-amber-700 mt-1 leading-relaxed">Bu kursu tamamlayarak puanınızı yükseltebilir ve seviye atlayabilirsiniz.</p>
+               </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

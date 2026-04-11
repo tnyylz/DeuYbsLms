@@ -40,8 +40,10 @@ export interface CourseDto {
   id: string;
   title: string;
   description: string;
+  thumbnailUrl?: string;
   level: string;
   lessonCount: number;
+  totalDurationInSeconds: number;
   totalXpReward: number;
   teacherName: string;
 }
@@ -50,6 +52,7 @@ export interface CourseDetailDto {
   id: string;
   title: string;
   description: string;
+  thumbnailUrl?: string;
   level: string;
   lessonCount: number;
   totalXpReward: number;
@@ -83,6 +86,7 @@ export interface EnrollmentDto {
   enrollmentId: string;
   courseId: string;
   courseTitle: string;
+  thumbnailUrl?: string;
   enrolledAt: string;
   isCourseCompleted: boolean;
   completedLessonsCount: number;
@@ -136,7 +140,25 @@ export interface StudentGamificationDto {
   xpProgressPercent: number;
   rank: number;
   completedQuizCount: number;
+  currentStreak: number;
+  xpMultiplier: number;
   badges: BadgeDto[];
+  recentXpTransactions: XpTransactionDto[];
+}
+
+export interface XpTransactionDto {
+  amount: number;
+  reason: string;
+  earnedAt: string;
+}
+
+export interface LeaderboardDto {
+  rank: number;
+  studentId: string;
+  fullName: string;
+  profilePictureUrl?: string;
+  totalXp: number;
+  level: number;
 }
 
 export interface BadgeDto {
@@ -160,6 +182,30 @@ export interface TeacherCourseDto {
   title: string;
   enrollmentCount: number;
   lessonCount: number;
+  thumbnailUrl?: string;
+  isPublished: boolean;
+}
+
+export interface StudentProfileDto {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  profilePictureUrl?: string;
+  totalXp: number;
+  currentLevel: number;
+  xpToNextLevel: number;
+  rank: number;
+  averageQuizScore: number;
+  coursesCompletedCount: number;
+  totalCertificatesCount: number;
+  badges: BadgeDto[];
+}
+
+export interface UpdateProfileRequest {
+  firstName: string;
+  lastName: string;
+  profilePictureUrl?: string;
 }
 
 export interface StudentAnalyticsDto {
@@ -167,8 +213,6 @@ export interface StudentAnalyticsDto {
   fullName: string;
   email: string;
   courseTitle: string;
-  completedLessons: number;
-  totalLessons: number;
   completionPercentage: number;
   failedQuizAttempts: number;
   isRedFlag: boolean;
@@ -178,6 +222,9 @@ export interface CreateCourseRequest {
   title: string;
   description: string;
   level: string;
+  thumbnailUrl?: string;
+  isPublished?: boolean;
+  tags?: string[];
 }
 
 export interface CreateLessonRequest {

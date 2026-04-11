@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Infrastructure/Persistence/Repositories/LessonRepository.cs
+// Path: DeuYbsLms.Infrastructure/Persistence/Repositories/LessonRepository.cs
 
 using DeuYbsLms.Application.Interfaces.Repositories;
 using DeuYbsLms.Domain.Entities.Course;
@@ -27,6 +27,7 @@ public class LessonRepository : Repository<Lesson>, ILessonRepository
 
     public async Task<Lesson?> GetNextLessonAsync(Guid courseId, int currentOrderIndex)
         => await _context.Lessons
-            .Where(l => l.CourseId == courseId && l.OrderIndex == currentOrderIndex + 1)
+            .Where(l => l.CourseId == courseId && l.OrderIndex > currentOrderIndex)
+            .OrderBy(l => l.OrderIndex)
             .FirstOrDefaultAsync();
 }

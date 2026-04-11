@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Application/DTOs/Progress/EnrollmentDto.cs
+// Path: DeuYbsLms.Application/DTOs/Progress/EnrollmentDto.cs
 
 namespace DeuYbsLms.Application.DTOs.Progress;
 
@@ -7,6 +7,7 @@ public class EnrollmentDto
     public Guid EnrollmentId { get; set; }
     public Guid CourseId { get; set; }
     public string CourseTitle { get; set; } = string.Empty;
+    public string? ThumbnailUrl { get; set; }
     public DateTime EnrolledAt { get; set; }
     public bool IsCourseCompleted { get; set; }
     public int CompletedLessonsCount { get; set; }

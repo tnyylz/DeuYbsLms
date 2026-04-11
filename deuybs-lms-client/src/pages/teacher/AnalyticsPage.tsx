@@ -1,10 +1,9 @@
-// Path: src/pages/teacher/AnalyticsPage.tsx
-
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { BookOpen, ChevronLeft, AlertTriangle, Users, BarChart2, Search } from 'lucide-react';
-import axiosInstance from '../../api/axiosInstance';
+import { BookOpen, ChevronLeft, AlertTriangle, Users, BarChart2, Search, Filter, Mail, ArrowUpRight } from 'lucide-react';
+import { getCourseAnalyticsApi } from '../../api/teacher.api';
 import type { StudentAnalyticsDto } from '../../types';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AnalyticsPage() {
   const { courseId } = useParams<{ courseId: string }>();
@@ -19,13 +18,14 @@ export default function AnalyticsPage() {
   useEffect(() => {
     const fetchAnalytics = async () => {
       try {
-        const url = courseId ? `/Teacher/analytics/${courseId}` : '/Teacher/analytics';
-        const res = await axiosInstance.get(url);
-        const data = res.data.data ?? res.data;
+        const data = await getCourseAnalyticsApi(courseId);
         setStudents(data);
         setFiltered(data);
-      } catch (err) { console.error(err); }
-      finally { setLoading(false); }
+      } catch (err) {
+        console.error('Analytics fetch error:', err);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchAnalytics();
   }, [courseId]);
@@ -41,110 +41,184 @@ export default function AnalyticsPage() {
   }, [search, showRedFlagsOnly, students]);
 
   const redFlagCount = students.filter(s => s.isRedFlag).length;
+  const avgCompletion = students.length > 0 
+    ? Math.round(students.reduce((a, s) => a + s.completionPercentage, 0) / students.length) 
+    : 0;
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <motion.div 
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+          className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full" 
+        />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
-      <nav className="border-b border-slate-800 px-6 py-4">
-        <div className="max-w-6xl mx-auto flex items-center gap-3">
-          <button onClick={() => navigate('/teacher/dashboard')} className="text-slate-400 hover:text-white transition-colors"><ChevronLeft size={20} /></button>
-          <BookOpen className="text-indigo-400" size={20} />
-          <span className="font-bold tracking-tight">Öğrenci Analitik</span>
+    <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-indigo-100">
+      <nav className="border-b border-slate-200 bg-white/80 backdrop-blur-xl sticky top-0 z-50 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+             <button onClick={() => navigate('/teacher/dashboard')} className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-indigo-600 hover:border-indigo-100 transition-all shadow-sm">
+                <ChevronLeft size={20} />
+             </button>
+             <div className="flex items-center gap-2">
+                <BarChart2 className="text-indigo-600" size={20} />
+                <span className="font-black tracking-tight uppercase text-lg">Eğitim Analitiği</span>
+             </div>
+          </div>
+          <div className="hidden sm:flex gap-4">
+             <div className="px-5 py-2 bg-slate-100 border border-slate-200 rounded-2xl text-[10px] font-black text-slate-500 uppercase tracking-widest">
+                {courseId ? 'Kurs Bazlı Analiz' : 'Genel Özet'}
+             </div>
+          </div>
         </div>
       </nav>
 
-      <div className="max-w-6xl mx-auto px-6 py-10">
-        {/* Özet Kartları */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
-            <Users className="text-indigo-400 mx-auto mb-2" size={20} />
-            <p className="text-xl font-bold">{students.length}</p>
-            <p className="text-slate-400 text-xs mt-1">Toplam Öğrenci</p>
-          </div>
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
-            <BarChart2 className="text-green-400 mx-auto mb-2" size={20} />
-            <p className="text-xl font-bold">
-              {students.length > 0 ? Math.round(students.reduce((a, s) => a + s.completionPercentage, 0) / students.length) : 0}%
-            </p>
-            <p className="text-slate-400 text-xs mt-1">Ort. Tamamlanma</p>
-          </div>
-          <div className="bg-slate-900 border border-slate-800 rounded-xl p-4 text-center">
-            <AlertTriangle className="text-red-400 mx-auto mb-2" size={20} />
-            <p className="text-xl font-bold">{redFlagCount}</p>
-            <p className="text-slate-400 text-xs mt-1">Risk Altında</p>
-          </div>
+      <main className="max-w-7xl mx-auto px-6 py-12">
+        <div className="mb-12">
+           <h1 className="text-4xl font-black mb-2 tracking-tight uppercase">Öğrenci <span className="text-indigo-600">Performansı</span></h1>
+           <p className="text-slate-500 font-bold uppercase tracking-widest text-sm">Gelişmeleri takip et ve aksiyon al.</p>
         </div>
 
-        {/* Filtreler */}
-        <div className="flex items-center gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
-            <input type="text" placeholder="Öğrenci ara..." value={search} onChange={e => setSearch(e.target.value)} className="w-full bg-slate-900 border border-slate-800 rounded-lg pl-9 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-colors" />
-          </div>
-          <button onClick={() => setShowRedFlagsOnly(!showRedFlagsOnly)} className={`flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-medium border transition-colors ${showRedFlagsOnly ? 'bg-red-950 border-red-800 text-red-300' : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'}`}>
-            <AlertTriangle size={14} /> {showRedFlagsOnly ? 'Tümünü Göster' : `Risk (${redFlagCount})`}
-          </button>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          {[
+            { label: 'Kayıtlı Öğrenci', value: students.length, icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+            { label: 'Ort. Tamamlanma', value: `${avgCompletion}%`, icon: BarChart2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+            { label: 'Risk Altındakiler', value: redFlagCount, icon: AlertTriangle, color: 'text-red-500', bg: 'bg-red-50' },
+          ].map((stat, i) => (
+            <motion.div 
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="bg-white border border-slate-200 rounded-[2.5rem] p-8 hover:shadow-xl hover:shadow-indigo-500/5 transition-all group"
+            >
+              <div className={`w-14 h-14 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center mb-6 shadow-sm group-hover:scale-110 transition-transform`}>
+                <stat.icon size={26} />
+              </div>
+              <p className="text-4xl font-black mb-1 tracking-tighter text-slate-900">{stat.value}</p>
+              <p className="text-slate-400 font-black text-[10px] uppercase tracking-[0.2em]">{stat.label}</p>
+            </motion.div>
+          ))}
         </div>
 
-        {/* Tablo */}
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-800 text-slate-400 text-xs uppercase tracking-wider">
-                <th className="text-left px-5 py-3">Öğrenci</th>
-                <th className="text-left px-5 py-3">Kurs</th>
-                <th className="text-center px-5 py-3">İlerleme</th>
-                <th className="text-center px-5 py-3">Başarısız Quiz</th>
-                <th className="text-center px-5 py-3">Durum</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((s, i) => (
-                <tr key={i} className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors">
-                  <td className="px-5 py-3">
-                    <p className="font-medium text-white">{s.fullName}</p>
-                    <p className="text-xs text-slate-400">{s.email}</p>
-                  </td>
-                  <td className="px-5 py-3 text-slate-300">{s.courseTitle}</td>
-                  <td className="px-5 py-3">
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="w-16 bg-slate-800 rounded-full h-1.5">
-                        <div className={`h-1.5 rounded-full ${s.completionPercentage >= 80 ? 'bg-green-500' : s.completionPercentage >= 40 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${s.completionPercentage}%` }} />
-                      </div>
-                      <span className="text-xs text-slate-400">{s.completionPercentage}%</span>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3 text-center">
-                    <span className={`text-xs font-medium ${s.failedQuizAttempts >= 3 ? 'text-red-400' : 'text-slate-400'}`}>{s.failedQuizAttempts}</span>
-                  </td>
-                  <td className="px-5 py-3 text-center">
-                    {s.isRedFlag ? (
-                      <span className="inline-flex items-center gap-1 text-xs bg-red-950 border border-red-800 text-red-300 px-2.5 py-1 rounded-full">
-                        <AlertTriangle size={10} /> Risk
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-xs bg-green-950 border border-green-800 text-green-300 px-2.5 py-1 rounded-full">
-                        Normal
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {filtered.length === 0 && (
-            <div className="text-center py-10 text-slate-400 text-sm">Öğrenci bulunamadı.</div>
-          )}
+        {/* Controls */}
+        <div className="flex flex-col md:flex-row gap-4 mb-10">
+           <div className="relative flex-1 group">
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors" size={20} />
+              <input 
+                type="text" 
+                placeholder="Öğrenci adı veya e-posta ile ara..." 
+                value={search} 
+                onChange={e => setSearch(e.target.value)}
+                className="w-full bg-white border border-slate-200 rounded-[1.5rem] pl-14 pr-6 py-5 outline-none focus:border-indigo-600/50 focus:ring-8 focus:ring-indigo-500/5 transition-all text-sm font-bold shadow-sm"
+              />
+           </div>
+           <button 
+            onClick={() => setShowRedFlagsOnly(!showRedFlagsOnly)}
+            className={`flex items-center gap-3 px-10 py-5 rounded-[1.5rem] text-sm font-black transition-all border-2 uppercase tracking-widest shadow-xl ${showRedFlagsOnly ? 'bg-red-500 text-white border-red-500 shadow-red-500/20' : 'bg-white border-slate-200 text-slate-400 hover:text-red-500 hover:border-red-100'}`}
+           >
+              <Filter size={18} /> {showRedFlagsOnly ? 'TÜMÜNÜ GÖSTER' : `RİSKLİLER (${redFlagCount})`}
+           </button>
         </div>
-      </div>
+
+        {/* Students Table/Grid */}
+        <div className="bg-white border border-slate-200 rounded-[3rem] overflow-hidden shadow-sm">
+           <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                 <thead>
+                    <tr className="border-b border-slate-100 text-[10px] font-black uppercase text-slate-400 tracking-[0.25em]">
+                       <th className="px-10 py-8">Öğrenci</th>
+                       <th className="px-10 py-8">Kurs</th>
+                       <th className="px-10 py-8">İlerleme</th>
+                       <th className="px-10 py-8">Quiz Durumu</th>
+                       <th className="px-10 py-8 text-right">Aksiyon</th>
+                    </tr>
+                 </thead>
+                 <tbody className="divide-y divide-slate-50">
+                    <AnimatePresence>
+                       {filtered.map((s, i) => (
+                          <motion.tr 
+                            key={s.studentId}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="hover:bg-slate-50 transition-colors group"
+                          >
+                             <td className="px-10 py-8">
+                                <div className="flex items-center gap-4">
+                                   <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center font-black text-sm text-white shadow-lg shadow-indigo-600/20 uppercase">
+                                      {s.fullName.charAt(0)}
+                                   </div>
+                                   <div>
+                                      <p className="font-black text-slate-900 leading-tight uppercase tracking-tight">{s.fullName}</p>
+                                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{s.email}</p>
+                                   </div>
+                                </div>
+                             </td>
+                             <td className="px-10 py-8">
+                                <span className="text-[10px] font-black text-indigo-600 bg-indigo-50 border border-indigo-100 px-4 py-2 rounded-xl uppercase tracking-widest">
+                                   {s.courseTitle}
+                                </span>
+                             </td>
+                             <td className="px-10 py-8">
+                                <div className="flex items-center gap-4">
+                                   <div className="flex-1 w-24 bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                                      <motion.div 
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${s.completionPercentage}%` }}
+                                        className={`h-full rounded-full shadow-inner ${s.completionPercentage >= 80 ? 'bg-emerald-500' : s.completionPercentage >= 40 ? 'bg-amber-500' : 'bg-red-500'}`}
+                                      />
+                                   </div>
+                                   <span className="text-xs font-black text-slate-900 uppercase">{s.completionPercentage}%</span>
+                                </div>
+                             </td>
+                             <td className="px-10 py-8">
+                                <div className="flex flex-col gap-1.5">
+                                   <span className={`text-[10px] font-black uppercase tracking-widest ${s.failedQuizAttempts > 2 ? 'text-red-500' : 'text-slate-500'}`}>
+                                      {s.failedQuizAttempts} Başarısız Deneme
+                                   </span>
+                                   {s.isRedFlag && (
+                                     <div className="flex items-center gap-1.5 text-red-500">
+                                       <AlertTriangle size={12} />
+                                       <span className="text-[9px] font-black uppercase tracking-tighter">Acil ilgi gerekiyor!</span>
+                                     </div>
+                                   )}
+                                </div>
+                             </td>
+                             <td className="px-10 py-8 text-right">
+                                <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                                   <button title="E-posta Gönder" className="w-10 h-10 bg-white border border-slate-200 rounded-xl text-slate-400 hover:text-indigo-600 hover:border-indigo-100 hover:shadow-lg transition-all flex items-center justify-center">
+                                      <Mail size={16} />
+                                   </button>
+                                   <button title="Detaylar" className="w-10 h-10 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 shadow-lg shadow-indigo-600/10 transition-all flex items-center justify-center">
+                                      <ArrowUpRight size={16} />
+                                   </button>
+                                </div>
+                             </td>
+                          </motion.tr>
+                       ))}
+                    </AnimatePresence>
+                 </tbody>
+              </table>
+           </div>
+           
+           {filtered.length === 0 && (
+              <div className="py-24 text-center">
+                 <div className="w-20 h-20 bg-slate-50 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
+                    <Search className="text-slate-200" size={32} />
+                 </div>
+                 <h3 className="text-2xl font-black mb-1 uppercase tracking-tight">Kayıt Bulunamadı</h3>
+                 <p className="text-slate-400 text-sm font-medium uppercase tracking-widest">Filtreleri değiştirerek tekrar dene.</p>
+              </div>
+           )}
+        </div>
+      </main>
     </div>
   );
 }

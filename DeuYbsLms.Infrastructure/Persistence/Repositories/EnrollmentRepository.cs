@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Infrastructure/Persistence/Repositories/EnrollmentRepository.cs
+// Path: DeuYbsLms.Infrastructure/Persistence/Repositories/EnrollmentRepository.cs
 
 using DeuYbsLms.Application.Interfaces.Repositories;
 using DeuYbsLms.Domain.Entities.Progress;
@@ -15,6 +15,7 @@ public class EnrollmentRepository : Repository<CourseEnrollment>, IEnrollmentRep
         => await _context.CourseEnrollments
             .Include(e => e.Course)
                 .ThenInclude(c => c.Lessons.OrderBy(l => l.OrderIndex))
+                    .ThenInclude(l => l.Quiz)
             .Include(e => e.LessonProgresses)
                 .ThenInclude(lp => lp.Lesson)
             .Include(e => e.Certificate)

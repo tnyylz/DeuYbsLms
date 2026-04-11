@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Application/Mappings/MappingProfile.cs
+// Path: DeuYbsLms.Application/Mappings/MappingProfile.cs
 
 using AutoMapper;
 using DeuYbsLms.Application.DTOs.Course;
@@ -19,8 +19,14 @@ public class MappingProfile : Profile
         CreateMap<Course, CourseDto>()
             .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher.FullName))
             .ForMember(dest => dest.LessonCount, opt => opt.MapFrom(src => src.Lessons.Count))
+            .ForMember(dest => dest.TotalDurationInSeconds, opt => opt.MapFrom(src => src.Lessons.Sum(l => l.DurationInSeconds)))
             .ForMember(dest => dest.Level, opt => opt.MapFrom(src => src.Level.ToString()))
             .ForMember(dest => dest.Tags, opt => opt.MapFrom(src => src.Tags.Select(t => t.Name).ToList()));
+
+        // Course → TeacherCourseDto
+        CreateMap<Course, DeuYbsLms.Application.DTOs.Teacher.TeacherCourseDto>()
+            .ForMember(dest => dest.LessonCount, opt => opt.MapFrom(src => src.Lessons.Count))
+            .ForMember(dest => dest.EnrollmentCount, opt => opt.MapFrom(src => src.Enrollments.Count));
 
         // Course → CourseDetailDto
         CreateMap<Course, CourseDetailDto>()
@@ -35,10 +41,16 @@ public class MappingProfile : Profile
                 opt => opt.MapFrom(src => src.Quiz != null ? src.Quiz.MinimumPassingScore : (int?)null));
 
         // CreateCourseDto → Course
-        CreateMap<CreateCourseDto, Course>();
+        CreateMap<CreateCourseDto, Course>()
+            .ForMember(dest => dest.Tags, opt => opt.Ignore());
 
         // CreateLessonDto → Lesson
         CreateMap<CreateLessonDto, Lesson>();
+
+        // CreateQuizDto → Quiz
+        CreateMap<CreateQuizDto, Quiz>();
+        CreateMap<CreateQuestionDto, Question>();
+        CreateMap<CreateAnswerOptionDto, AnswerOption>();
 
         // LessonProgress → LessonProgressDto
         CreateMap<LessonProgress, LessonProgressDto>()

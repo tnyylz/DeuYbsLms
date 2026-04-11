@@ -35,7 +35,12 @@ public class ProgressService : IProgressService
             return Result<CourseProgressDto>.Failure("Bu kursa kayıtlı değilsiniz.");
 
         var totalLessons = enrollment.Course.Lessons.Count;
-        var completedLessons = enrollment.LessonProgresses.Count(lp => lp.IsQuizPassed);
+        var completedLessons = enrollment.LessonProgresses.Count(lp => 
+        {
+            var lesson = enrollment.Course.Lessons.FirstOrDefault(l => l.Id == lp.LessonId);
+            if (lesson == null) return false;
+            return lesson.Quiz == null ? lp.IsVideoCompleted : lp.IsQuizPassed;
+        });
 
         var lessonDtos = enrollment.Course.Lessons.Select(lesson =>
         {
@@ -47,7 +52,7 @@ public class ProgressService : IProgressService
                 LessonId = lesson.Id,
                 LessonTitle = lesson.Title,
                 OrderIndex = lesson.OrderIndex,
-                IsUnlocked = progress?.IsUnlocked ?? false,
+                IsUnlocked = progress?.IsUnlocked ?? (lesson.OrderIndex == 1 || enrollment.Course.Lessons.OrderBy(l => l.OrderIndex).First().Id == lesson.Id),
                 IsVideoCompleted = progress?.IsVideoCompleted ?? false,
                 IsQuizPassed = progress?.IsQuizPassed ?? false,
                 LastQuizScore = progress?.LastQuizScore,
@@ -91,8 +96,16 @@ public class ProgressService : IProgressService
         {
             progress.IsVideoCompleted = true;
             progress.VideoCompletedAt = DateTime.UtcNow;
-            await _progressRepository.UpdateAsync(progress);
 
+            // Eğer quizi yoksa, video bitince sonraki dersi aç
+            var lessonWithQuiz = await _lessonRepository.GetLessonWithQuizAsync(lessonId);
+            if (lessonWithQuiz?.Quiz == null)
+            {
+                await UnlockNextLessonAsync(enrollment, lesson.OrderIndex);
+                await CheckCourseCompletionAsync(enrollment, studentId);
+            }
+
+            await _progressRepository.UpdateAsync(progress);
             await _gamificationService.AwardXpAsync(studentId, lesson.XpReward, $"Video tamamlandı: {lesson.Title}");
         }
 
@@ -259,7 +272,14 @@ public class ProgressService : IProgressService
         var allProgresses = await _progressRepository.GetEnrollmentProgressAsync(enrollment.Id);
         var totalLessons = enrollment.Course.Lessons.Count;
 
-        if (allProgresses.Count(lp => lp.IsQuizPassed) == totalLessons)
+        var completedCount = allProgresses.Count(lp => 
+        {
+            var lesson = enrollment.Course.Lessons.FirstOrDefault(l => l.Id == lp.LessonId);
+            if (lesson == null) return false;
+            return lesson.Quiz == null ? lp.IsVideoCompleted : lp.IsQuizPassed;
+        });
+
+        if (completedCount == totalLessons && totalLessons > 0)
         {
             enrollment.IsCourseCompleted = true;
             enrollment.CompletedAt = DateTime.UtcNow;
@@ -279,9 +299,15 @@ public class ProgressService : IProgressService
             EnrollmentId = e.Id,
             CourseId = e.CourseId,
             CourseTitle = e.Course.Title,
+            ThumbnailUrl = e.Course.ThumbnailUrl,
             EnrolledAt = e.EnrolledAt,
             IsCourseCompleted = e.IsCourseCompleted,
-            CompletedLessonsCount = e.LessonProgresses.Count(lp => lp.IsQuizPassed),
+            CompletedLessonsCount = e.LessonProgresses.Count(lp => 
+            {
+                var lesson = e.Course.Lessons.FirstOrDefault(l => l.Id == lp.LessonId);
+                if (lesson == null) return false;
+                return lesson.Quiz == null ? lp.IsVideoCompleted : lp.IsQuizPassed;
+            }),
             TotalLessonsCount = e.Course.Lessons.Count
         }).ToList();
 

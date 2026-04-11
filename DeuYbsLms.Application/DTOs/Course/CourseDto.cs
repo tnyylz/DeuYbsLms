@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Application/DTOs/Course/CourseDto.cs
+// Path: DeuYbsLms.Application/DTOs/Course/CourseDto.cs
 
 using DeuYbsLms.Domain.Enums;
 
@@ -14,6 +14,7 @@ public class CourseDto
     public int TotalXpReward { get; set; }
     public string TeacherName { get; set; } = string.Empty;
     public int LessonCount { get; set; }
+    public int TotalDurationInSeconds { get; set; }
     public List<string> Tags { get; set; } = new();
     public DateTime CreatedAt { get; set; }
 }

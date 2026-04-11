@@ -25,6 +25,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<ILessonRepository, LessonRepository>();
         services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
         services.AddScoped<IProgressRepository, ProgressRepository>();
+        services.AddScoped<IQuizRepository, QuizRepository>();
 
         // Services
         services.AddScoped<ITokenService, TokenService>();
@@ -32,6 +33,8 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IProgressService, ProgressService>();
         services.AddScoped<IGamificationService, GamificationService>();
         services.AddScoped<ICertificateService, CertificateService>();
+        services.AddScoped<IFileService, FileService>();
+        services.AddScoped<ITeacherService, TeacherService>();
 
         return services;
     }

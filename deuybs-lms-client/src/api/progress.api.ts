@@ -4,8 +4,8 @@ import axiosInstance from './axiosInstance';
 import type { CourseProgressDto, QuizResultDto, Result, EnrollmentDto } from '../types';
 
 export const enrollApi = async (courseId: string): Promise<boolean> => {
-  const response = await axiosInstance.post<Result<boolean>>(`/Progress/enroll/${courseId}`);
-  return response.data.data!;
+  const response = await axiosInstance.post(`/Progress/enroll/${courseId}`);
+  return response.status === 200 || response.data.isSuccess;
 };
 
 export const getMyEnrollmentsApi = async (): Promise<EnrollmentDto[]> => {
@@ -14,12 +14,12 @@ export const getMyEnrollmentsApi = async (): Promise<EnrollmentDto[]> => {
 };
 
 export const completeVideoApi = async (lessonId: string): Promise<void> => {
-  await axiosInstance.post(`/Progress/complete-video?lessonId=${lessonId}`);
+  await axiosInstance.post(`/Progress/complete-video/${lessonId}`);
 };
 
 export const getCourseProgressApi = async (courseId: string): Promise<CourseProgressDto> => {
-  const response = await axiosInstance.get<Result<CourseProgressDto>>(`/Progress/course/${courseId}`);
-  return response.data.data!;
+  const response = await axiosInstance.get(`/Progress/${courseId}`);
+  return response.data.data ?? response.data;
 };
 
 export const submitQuizApi = async (
