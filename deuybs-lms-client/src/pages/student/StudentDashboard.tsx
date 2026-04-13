@@ -2,20 +2,21 @@
 
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, Trophy, LogOut, ChevronRight, Play, Medal, CheckCircle, BarChart3, User, Flame, TrendingUp, Star, Sun, Moon } from 'lucide-react';
+import { BookOpen, Trophy, LogOut, ChevronRight, Play, Medal, CheckCircle, BarChart3, User, Flame, TrendingUp, Star } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
-import { useThemeStore } from '../../store/themeStore';
+import ThemeToggle from '../../components/shared/ThemeToggle';
 import { getGamificationApi, getLeaderboardApi } from '../../api/gamification.api';
 import { getMyEnrollmentsApi } from '../../api/progress.api';
+import { getProfileApi } from '../../api/profile.api';
 import { getFileUrl } from '../../utils/fileUtils';
-import type { StudentGamificationDto, EnrollmentDto, LeaderboardDto } from '../../types';
+import type { StudentGamificationDto, EnrollmentDto, LeaderboardDto, StudentProfileDto } from '../../types';
 
 export default function StudentDashboard() {
   const { user, logout } = useAuthStore();
-  const { theme, toggleTheme } = useThemeStore();
   const navigate = useNavigate();
 
   const [gamification, setGamification] = useState<StudentGamificationDto | null>(null);
+  const [profile, setProfile] = useState<StudentProfileDto | null>(null);
   const [enrollments, setEnrollments] = useState<EnrollmentDto[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardDto[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -23,14 +24,16 @@ export default function StudentDashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [gData, cData, lData] = await Promise.all([
+        const [gData, cData, lData, pData] = await Promise.all([
           getGamificationApi().catch(() => null),
           getMyEnrollmentsApi().catch(() => []),
           getLeaderboardApi(5).catch(() => []),
+          getProfileApi().catch(() => null),
         ]);
         setGamification(gData);
         setEnrollments(cData);
         setLeaderboard(lData);
+        setProfile(pData);
       } catch (err) {
         console.error(err);
       } finally {
@@ -44,23 +47,23 @@ export default function StudentDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
-  // Extract dummy rank if available (from our fallback api)
-  const rank = gamification?.rank || 1;
+  // Extract rank and other stats
+  const rank = profile?.rank || gamification?.rank || 1;
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white font-sans transition-colors duration-300">
       {/* Top Navigation */}
-      <nav className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-6 py-4 sticky top-0 z-10 shadow-sm">
+      <nav className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-6 py-4 sticky top-0 z-50 shadow-sm transition-colors">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="bg-indigo-50 dark:bg-indigo-900/30 p-2 rounded-lg">
-              <BookOpen className="text-indigo-600 dark:text-indigo-400" size={20} />
+            <div className="bg-indigo-600 p-2 rounded-lg shadow-lg shadow-indigo-200 dark:shadow-none transition-all">
+              <BookOpen className="text-white" size={20} />
             </div>
             <span className="font-bold tracking-tight text-slate-900 dark:text-white text-lg">
               DEÜ YBS <span className="text-indigo-600 dark:text-indigo-400">LMS</span>
@@ -73,16 +76,11 @@ export default function StudentDashboard() {
               <User size={16} className="text-indigo-500" /> Profilim
             </Link>
             
-            <div className="w-px h-5 bg-slate-200 dark:bg-slate-700"></div>
+            <div className="w-px h-5 bg-slate-200 dark:bg-slate-800 mx-1 hidden sm:block"></div>
 
-            {/* Theme Toggle Button */}
-            <button 
-              onClick={toggleTheme}
-              className="p-2 transition-all hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400"
-              title={theme === 'light' ? 'Karanlık Moda Geç' : 'Aydınlık Moda Geç'}
-            >
-              {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-            </button>
+            <ThemeToggle />
+
+            <div className="w-px h-5 bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
 
             <button onClick={handleLogout} className="flex items-center gap-1.5 text-slate-500 hover:text-red-500 dark:text-slate-400 dark:hover:text-red-400 font-medium transition-colors text-sm uppercase tracking-wider">
               <LogOut size={16} /> Çıkış
@@ -178,24 +176,24 @@ export default function StudentDashboard() {
 
             {/* SECTION 3: İstatistikler (Gamification) */}
             <section>
-             <h3 className="font-bold text-slate-800 dark:text-white text-lg mb-4 flex items-center gap-2">
-                <BarChart3 className="text-indigo-500" size={20} />
-                Performans Özeti
-              </h3>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <h3 className="font-bold text-slate-800 dark:text-white text-lg mb-4 flex items-center gap-2">
+                 <BarChart3 className="text-indigo-500" size={20} />
+                 Performans Özeti
+               </h3>
+               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm text-center group hover:border-indigo-200 dark:hover:border-indigo-500 transition-all">
                   <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
                     <CheckCircle size={20} />
                   </div>
-                  <p className="text-2xl font-black text-slate-900 dark:text-white">{gamification?.completedQuizCount || 0}</p>
-                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Çözülen Quiz</p>
+                  <p className="text-2xl font-black text-slate-900 dark:text-white">{profile?.coursesCompletedCount || 0}</p>
+                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Tamamlanan Kurs</p>
                 </div>
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm text-center group hover:border-indigo-200 dark:hover:border-indigo-500 transition-all">
                   <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
-                    <Medal size={20} />
+                    <Star size={20} />
                   </div>
-                  <p className="text-2xl font-black text-slate-900 dark:text-white">{gamification?.badges?.length || 0}</p>
-                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Kazanılan Rozet</p>
+                  <p className="text-2xl font-black text-slate-900 dark:text-white">%{profile?.averageQuizScore || 0}</p>
+                  <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Ortalama Puan</p>
                 </div>
                 <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm text-center group hover:border-indigo-200 dark:hover:border-indigo-500 transition-all">
                   <div className="w-10 h-10 bg-amber-50 dark:bg-amber-900/30 text-amber-500 dark:text-amber-400 rounded-xl flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition-transform">
@@ -212,7 +210,7 @@ export default function StudentDashboard() {
                     <Flame size={20} fill="currentColor" />
                   </div>
                   <p className="text-2xl font-black text-slate-900 dark:text-white">{gamification?.currentStreak || 0} Gün</p>
-                  <p className="text-[10px] font-black text-orange-500 dark:text-orange-400 uppercase tracking-widest mt-1 flex items-center justify-center gap-1">
+                  <p className="text-[10px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-widest mt-1 flex items-center justify-center gap-1">
                     <TrendingUp size={10} /> x{gamification?.xpMultiplier?.toFixed(1) || '1.0'} Bonus
                   </p>
                 </div>

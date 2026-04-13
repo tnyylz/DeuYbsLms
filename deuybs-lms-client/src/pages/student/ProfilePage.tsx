@@ -2,30 +2,37 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   User, Mail, Camera, Save, Award, TrendingUp, BookOpen, 
-  Trophy, ChevronLeft, Loader2, CheckCircle, Zap, ShieldCheck, Sun, Moon
+  Trophy, ChevronLeft, Loader2, CheckCircle, Zap, ShieldCheck
 } from 'lucide-react';
 import { getProfileApi, updateProfileApi } from '../../api/profile.api';
-import { uploadThumbnailApi } from '../../api/teacher.api'; // Reuse upload logic
+import { uploadThumbnailApi } from '../../api/teacher.api';
 import { getFileUrl } from '../../utils/fileUtils';
 import { useAuthStore } from '../../store/authStore';
-import { useThemeStore } from '../../store/themeStore';
+import ThemeToggle from '../../components/shared/ThemeToggle';
+import { changePasswordApi } from '../../api/profile.api';
 import type { StudentProfileDto } from '../../types';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { user: authUser, setAuth } = useAuthStore();
-  const { theme, toggleTheme } = useThemeStore();
   const [profile, setProfile] = useState<StudentProfileDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   
-  // Form fields
+  // ... (existing state)
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [studentNumber, setStudentNumber] = useState('');
   const [profilePic, setProfilePic] = useState('');
+  
+  // Password fields
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -36,6 +43,7 @@ export default function ProfilePage() {
         setProfile(data);
         setFirstName(data.firstName);
         setLastName(data.lastName);
+        setStudentNumber(data.studentNumber || '');
         setProfilePic(data.profilePictureUrl || '');
       } catch (err) {
         console.error('Profile load error:', err);
@@ -71,10 +79,10 @@ export default function ProfilePage() {
       await updateProfileApi({
         firstName,
         lastName,
+        studentNumber,
         profilePictureUrl: profilePic
       });
       
-      // Update local auth state if names or photo changed
       if (authUser) {
         setAuth({
           ...authUser,
@@ -91,18 +99,50 @@ export default function ProfilePage() {
     }
   };
 
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmNewPassword) {
+      setError('Yeni şifreler eşleşmiyor!');
+      return;
+    }
+
+    if (newPassword === currentPassword) {
+      setError('Yeni şifre eskisinden farklı olmalı!');
+      return;
+    }
+
+    setChangingPassword(true);
+    setError('');
+    try {
+      await changePasswordApi({
+        currentPassword,
+        newPassword,
+        confirmNewPassword
+      });
+      setSuccess('Şifreniz başarıyla değiştirildi.');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.response?.data || 'Şifre değiştirilirken bir hata oluştu.');
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
         <Loader2 className="animate-spin text-indigo-600" size={40} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white pb-20 font-sans transition-colors">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white pb-20 font-sans transition-colors duration-300">
       {/* Navigation Header */}
-      <nav className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-6 py-4 sticky top-0 z-20 shadow-sm">
+      <nav className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-6 py-4 sticky top-0 z-50 shadow-sm transition-colors">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <button 
             onClick={() => navigate('/student/dashboard')} 
@@ -113,12 +153,8 @@ export default function ProfilePage() {
           </button>
           
           <div className="flex items-center gap-4">
-            <button 
-              onClick={toggleTheme}
-              className="p-2 transition-all hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400"
-            >
-              {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-            </button>
+            <ThemeToggle />
+            <div className="w-px h-5 bg-slate-200 dark:bg-slate-800 hidden sm:block"></div>
             <div className="flex items-center gap-2">
                <ShieldCheck className="text-indigo-600 dark:text-indigo-400" size={20} />
                <span className="font-bold text-slate-800 dark:text-slate-200">Hesap Ayarları</span>
@@ -234,6 +270,16 @@ export default function ProfilePage() {
                   className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl px-6 py-4 font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-100/50 dark:focus:ring-indigo-900/30 transition-all border-l-4 border-l-indigo-500"
                 />
               </div>
+              <div className="space-y-3">
+                <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Öğrenci Numaranız</label>
+                <input 
+                  type="text" 
+                  value={studentNumber}
+                  onChange={(e) => setStudentNumber(e.target.value)}
+                  placeholder="Örn: 2023501001"
+                  className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl px-6 py-4 font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-100/50 dark:focus:ring-indigo-900/30 transition-all border-l-4 border-l-indigo-500"
+                />
+              </div>
             </div>
  
             <div className="mt-8 p-6 bg-slate-50 dark:bg-slate-800/40 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 flex items-center gap-4 group">
@@ -268,6 +314,61 @@ export default function ProfilePage() {
               {saving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
               Değişiklikleri Kaydet
             </button>
+          </section>
+
+          {/* Password Change Form */}
+          <section className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-10 border border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none">
+            <h3 className="text-2xl font-black mb-10 flex items-center gap-4 text-slate-900 dark:text-white">
+              <div className="p-3 bg-indigo-50 dark:bg-indigo-900/40 rounded-2xl text-indigo-600 dark:text-indigo-400">
+                <ShieldCheck size={24} />
+              </div>
+              Şifre Değiştir
+            </h3>
+
+            <form onSubmit={handleChangePassword} className="space-y-6">
+              <div className="space-y-3">
+                <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Mevcut Şifre</label>
+                <input 
+                  type="password" 
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  required
+                  className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl px-6 py-4 font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-100/50 dark:focus:ring-indigo-900/30 transition-all"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="space-y-3">
+                  <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Yeni Şifre</label>
+                  <input 
+                    type="password" 
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl px-6 py-4 font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-100/50 dark:focus:ring-indigo-900/30 transition-all"
+                  />
+                </div>
+                <div className="space-y-3">
+                  <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Yeni Şifre (Tekrar)</label>
+                  <input 
+                    type="password" 
+                    value={confirmNewPassword}
+                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    required
+                    className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl px-6 py-4 font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-100/50 dark:focus:ring-indigo-900/30 transition-all"
+                  />
+                </div>
+              </div>
+
+              <button 
+                type="submit"
+                disabled={changingPassword}
+                className="bg-slate-900 dark:bg-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 text-white font-black px-10 py-5 rounded-[2rem] flex items-center justify-center gap-3 transition-all active:scale-95 shadow-xl disabled:opacity-50"
+              >
+                {changingPassword ? <Loader2 className="animate-spin" size={20} /> : <Zap size={20} />}
+                Şifreyi Güncelle
+              </button>
+            </form>
           </section>
 
           {/* Academic Success Dashboard */}

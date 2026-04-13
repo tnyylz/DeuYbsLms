@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { BookOpen, ChevronLeft, PlusCircle, Trash2, Loader2, CheckCircle, HelpCircle, Image as ImageIcon, Upload, X, GripVertical, Save, Send } from 'lucide-react';
 import { motion, Reorder, AnimatePresence } from 'framer-motion';
+import ThemeToggle from '../../components/shared/ThemeToggle';
 import { 
   getTeacherDashboardApi, 
   updateCourseApi, 
@@ -229,23 +230,27 @@ export default function CourseBuilder() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 selection:bg-indigo-100">
-      <nav className="border-b border-slate-200 bg-white/80 backdrop-blur-xl px-6 py-4 sticky top-0 z-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 selection:bg-indigo-100">
+      <nav className="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-6 py-4 sticky top-0 z-50">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate('/teacher/dashboard')} className="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:border-indigo-100 transition-all">
+            <button onClick={() => navigate('/teacher/dashboard')} className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-300 hover:border-indigo-100 dark:hover:border-indigo-900 transition-all">
               <ChevronLeft size={20} />
             </button>
             <div className="flex items-center gap-2">
-              <BookOpen className="text-indigo-600" size={20} />
+              <BookOpen className="text-indigo-600 dark:text-indigo-400" size={20} />
               <span className="font-black tracking-tight text-lg uppercase">{courseId ? 'Kursu Düzenle' : 'Yeni Kurs'}</span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-             <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mr-2">Aşamalar:</div>
-            <div className={`w-3 h-3 rounded-full ${step === 'course' ? 'bg-indigo-600 scale-125 shadow-lg shadow-indigo-600/20' : 'bg-slate-200'}`} />
-            <div className={`w-3 h-3 rounded-full ${step === 'lessons' ? 'bg-indigo-600 scale-125 shadow-lg shadow-indigo-600/20' : 'bg-slate-200'}`} />
-            <div className={`w-3 h-3 rounded-full ${step === 'done' ? 'bg-indigo-600 scale-125 shadow-lg shadow-indigo-600/20' : 'bg-slate-200'}`} />
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <div className="h-6 w-px bg-slate-200 dark:bg-slate-800" />
+            <div className="flex items-center gap-2">
+               <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mr-2">Aşamalar:</div>
+              <div className={`w-3 h-3 rounded-full ${step === 'course' ? 'bg-indigo-600 scale-125 shadow-lg shadow-indigo-600/20' : 'bg-slate-200 dark:bg-slate-800'}`} />
+              <div className={`w-3 h-3 rounded-full ${step === 'lessons' ? 'bg-indigo-600 scale-125 shadow-lg shadow-indigo-600/20' : 'bg-slate-200 dark:bg-slate-800'}`} />
+              <div className={`w-3 h-3 rounded-full ${step === 'done' ? 'bg-indigo-600 scale-125 shadow-lg shadow-indigo-600/20' : 'bg-slate-200 dark:bg-slate-800'}`} />
+            </div>
           </div>
         </div>
       </nav>
@@ -253,12 +258,12 @@ export default function CourseBuilder() {
       <div className="max-w-5xl mx-auto px-6 py-12">
         <AnimatePresence>
           {error && (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="bg-red-50 border border-red-100 text-red-600 px-6 py-4 rounded-3xl mb-8 flex items-center gap-3 font-bold shadow-sm">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="bg-red-50 dark:bg-red-950/30 border border-red-100 dark:border-red-900/50 text-red-600 dark:text-red-400 px-6 py-4 rounded-3xl mb-8 flex items-center gap-3 font-bold shadow-sm">
               <X size={18} /> {error}
             </motion.div>
           )}
           {success && (
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="bg-emerald-50 border border-emerald-100 text-emerald-600 px-6 py-4 rounded-3xl mb-8 flex items-center gap-3 font-bold shadow-sm">
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 text-emerald-600 dark:text-emerald-400 px-6 py-4 rounded-3xl mb-8 flex items-center gap-3 font-bold shadow-sm">
               <CheckCircle size={18} /> {success}
             </motion.div>
           )}
@@ -267,39 +272,39 @@ export default function CourseBuilder() {
         {step === 'course' && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
-              <section className="bg-white border border-slate-200 p-10 rounded-[2.5rem] shadow-sm">
-                <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
+              <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-10 rounded-[2.5rem] shadow-sm">
+                <h2 className="text-2xl font-black mb-8 flex items-center gap-3 text-slate-900 dark:text-slate-100">
                   <span className="w-2 h-8 bg-indigo-600 rounded-full" />
                   TEMEL BİLGİLER
                 </h2>
                 <div className="space-y-8">
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Kurs Başlığı</label>
+                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-widest">Kurs Başlığı</label>
                     <input 
                       type="text" 
                       value={title} 
                       onChange={e => setTitle(e.target.value)} 
                       placeholder="Örn: Modern İşletme Yönetimi" 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-600 transition-all outline-none" 
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-6 py-4 text-slate-900 dark:text-slate-100 font-bold focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-600 transition-all outline-none" 
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Açıklama</label>
+                    <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-widest">Açıklama</label>
                     <textarea 
                       value={description} 
                       onChange={e => setDescription(e.target.value)} 
                       rows={5} 
                       placeholder="Öğrenciler bu kursta neler öğrenecek?" 
-                      className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-600 transition-all outline-none resize-none" 
+                      className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-6 py-4 text-slate-900 dark:text-slate-100 font-bold focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-600 transition-all outline-none resize-none" 
                     />
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Zorluk Seviyesi</label>
+                      <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-widest">Zorluk Seviyesi</label>
                       <select 
                         value={level} 
                         onChange={e => setLevel(e.target.value)} 
-                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:border-indigo-600 transition-all outline-none appearance-none cursor-pointer"
+                        className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-6 py-4 text-slate-900 dark:text-slate-100 font-bold focus:border-indigo-600 transition-all outline-none appearance-none cursor-pointer"
                       >
                         <option value="Beginner">Başlangıç</option>
                         <option value="Intermediate">Orta</option>
@@ -307,11 +312,11 @@ export default function CourseBuilder() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-black text-slate-400 mb-2 uppercase tracking-widest">Durum</label>
-                      <div className="flex bg-slate-50 p-1.5 rounded-2xl border border-slate-200">
+                      <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 mb-2 uppercase tracking-widest">Durum</label>
+                      <div className="flex bg-slate-50 dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700">
                         <button 
                           onClick={() => setIsPublished(false)}
-                          className={`flex-1 py-3 rounded-xl text-xs font-black transition-all ${!isPublished ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                          className={`flex-1 py-3 rounded-xl text-xs font-black transition-all ${!isPublished ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                         >
                           TASLAK
                         </button>
@@ -327,16 +332,16 @@ export default function CourseBuilder() {
                 </div>
               </section>
 
-              <section className="bg-white border border-slate-200 p-10 rounded-[2.5rem] shadow-sm">
-                <h2 className="text-2xl font-black mb-8 flex items-center gap-3">
+              <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-10 rounded-[2.5rem] shadow-sm">
+                <h2 className="text-2xl font-black mb-8 flex items-center gap-3 text-slate-900 dark:text-slate-100">
                   <span className="w-2 h-8 bg-indigo-600 rounded-full" />
                   ETİKETLER
                 </h2>
                 <div className="flex flex-wrap gap-2 mb-6">
                   {tags.map((tag, i) => (
-                    <span key={i} className="bg-indigo-50 border border-indigo-100 text-indigo-600 px-4 py-2 rounded-xl text-sm font-black flex items-center gap-2 group">
+                    <span key={i} className="bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 text-indigo-600 dark:text-indigo-400 px-4 py-2 rounded-xl text-sm font-black flex items-center gap-2 group">
                       {tag}
-                      <button onClick={() => removeTag(i)} className="text-indigo-300 group-hover:text-indigo-600 transition-colors"><X size={14} /></button>
+                      <button onClick={() => removeTag(i)} className="text-indigo-300 dark:text-indigo-700 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors"><X size={14} /></button>
                     </span>
                   ))}
                 </div>
@@ -347,35 +352,35 @@ export default function CourseBuilder() {
                     onChange={e => setTagInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && addTag()}
                     placeholder="Etiket ekle (Örn: Finans, Java...)" 
-                    className="flex-1 bg-slate-50 border border-slate-200 rounded-2xl px-6 py-4 text-slate-900 font-bold focus:border-indigo-600 outline-none transition-all" 
+                    className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-6 py-4 text-slate-900 dark:text-slate-100 font-bold focus:border-indigo-600 outline-none transition-all" 
                   />
-                  <button onClick={addTag} className="bg-slate-900 text-white hover:bg-black transition-all px-8 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-slate-900/10">Ekle</button>
+                  <button onClick={addTag} className="bg-slate-900 dark:bg-indigo-600 text-white hover:bg-black dark:hover:bg-indigo-700 transition-all px-8 rounded-2xl font-black text-sm uppercase tracking-widest shadow-lg shadow-slate-900/10 dark:shadow-indigo-600/10">Ekle</button>
                 </div>
               </section>
             </div>
 
             <div className="space-y-8">
-              <section className="bg-white border border-slate-200 p-10 rounded-[2.5rem] text-center shadow-sm">
-                <h2 className="text-2xl font-black mb-8 text-left flex items-center gap-3 uppercase tracking-tighter">
+              <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-10 rounded-[2.5rem] text-center shadow-sm">
+                <h2 className="text-2xl font-black mb-8 text-left flex items-center gap-3 uppercase tracking-tighter text-slate-900 dark:text-slate-100">
                   <span className="w-2 h-8 bg-indigo-600 rounded-full" />
                   Kapak
                 </h2>
-                <div className="aspect-video bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center overflow-hidden group relative transition-all hover:border-indigo-400">
+                <div className="aspect-video bg-slate-50 dark:bg-slate-800 rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center overflow-hidden group relative transition-all hover:border-indigo-400">
                   {thumbnailUrl ? (
                     <>
                       <img src={getFileUrl(thumbnailUrl)} alt="Thumbnail" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
-                      <div className="absolute inset-0 bg-white/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                        <button onClick={() => fileInputRef.current?.click()} className="p-4 bg-white rounded-2xl shadow-xl text-indigo-600 hover:bg-indigo-600 hover:text-white transition-all"><Upload size={24} /></button>
-                        <button onClick={() => setThumbnailUrl('')} className="p-4 bg-white rounded-2xl shadow-xl text-red-600 hover:bg-red-600 hover:text-white transition-all"><Trash2 size={24} /></button>
+                      <div className="absolute inset-0 bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                        <button onClick={() => fileInputRef.current?.click()} className="p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-xl text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 dark:hover:bg-indigo-500 hover:text-white transition-all"><Upload size={24} /></button>
+                        <button onClick={() => setThumbnailUrl('')} className="p-4 bg-white dark:bg-slate-800 rounded-2xl shadow-xl text-red-600 dark:text-red-400 hover:bg-red-600 dark:hover:bg-red-500 hover:text-white transition-all"><Trash2 size={24} /></button>
                       </div>
                     </>
                   ) : (
                     <>
-                      <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-6 text-slate-300 group-hover:text-indigo-600 transition-colors shadow-sm">
+                      <div className="w-16 h-16 bg-white dark:bg-slate-900 rounded-2xl flex items-center justify-center mb-6 text-slate-300 dark:text-slate-700 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors shadow-sm">
                         <ImageIcon size={32} />
                       </div>
-                      <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest mb-6">Min 1280x720 • .JPG, .PNG</p>
-                      <button onClick={() => fileInputRef.current?.click()} className="bg-white text-indigo-600 border-2 border-indigo-600 hover:bg-indigo-600 hover:text-white transition-all px-8 py-3.5 rounded-2xl text-sm font-black shadow-lg shadow-indigo-600/5 uppercase tracking-widest">Seç</button>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-widest mb-6">Min 1280x720 • .JPG, .PNG</p>
+                      <button onClick={() => fileInputRef.current?.click()} className="bg-white dark:bg-slate-900 text-indigo-600 dark:text-indigo-400 border-2 border-indigo-600 dark:border-indigo-500 hover:bg-indigo-600 dark:hover:bg-indigo-500 hover:text-white transition-all px-8 py-3.5 rounded-2xl text-sm font-black shadow-lg shadow-indigo-600/5 dark:shadow-indigo-600/10 uppercase tracking-widest">Seç</button>
                     </>
                   )}
                   <input ref={fileInputRef} type="file" hidden accept="image/*" onChange={handleFileChange} />
@@ -393,8 +398,8 @@ export default function CourseBuilder() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
               <div>
-                <h2 className="text-4xl font-black tracking-tight text-slate-900 uppercase">{title}</h2>
-                <p className="text-slate-400 font-bold uppercase tracking-widest text-sm mt-2">Müfredatı Düzenle & Dersleri Ekle</p>
+                <h2 className="text-4xl font-black tracking-tight text-slate-900 dark:text-slate-100 uppercase">{title}</h2>
+                <p className="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest text-sm mt-2">Müfredatı Düzenle & Dersleri Ekle</p>
               </div>
               <button 
                 onClick={() => setLessons([...lessons, emptyLesson(lessons.length)])}
@@ -412,49 +417,49 @@ export default function CourseBuilder() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className="bg-white border border-slate-200 rounded-[3rem] p-10 group relative shadow-sm hover:shadow-xl hover:shadow-indigo-600/5 transition-all"
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[3rem] p-10 group relative shadow-sm hover:shadow-xl hover:shadow-indigo-600/5 dark:hover:shadow-indigo-500/5 transition-all"
                 >
                   <div className="flex flex-col lg:flex-row gap-10 relative z-10">
-                    <div className="flex-shrink-0 flex items-center gap-6 text-slate-200 group-hover:text-indigo-100 transition-colors">
-                      <GripVertical size={32} className="cursor-grab active:cursor-grabbing hover:text-indigo-600 transition-colors" />
+                    <div className="flex-shrink-0 flex items-center gap-6 text-slate-200 dark:text-slate-800 group-hover:text-indigo-100 dark:group-hover:text-indigo-900/30 transition-colors">
+                      <GripVertical size={32} className="cursor-grab active:cursor-grabbing hover:text-indigo-600 dark:hover:text-indigo-500 transition-colors" />
                       <div className="text-6xl font-black italic opacity-50">0{index + 1}</div>
                     </div>
 
                     <div className="flex-1 space-y-8">
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         <div className="md:col-span-2">
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Ders Başlığı</label>
+                          <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2">Ders Başlığı</label>
                           <input 
                             type="text" 
                             value={lesson.title} 
                             onChange={e => updateLesson(index, { title: e.target.value })} 
                             placeholder="Dersin adı..."
-                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-5 text-slate-900 font-bold focus:border-indigo-600 outline-none transition-all" 
+                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-6 py-5 text-slate-900 dark:text-slate-100 font-bold focus:border-indigo-600 outline-none transition-all" 
                           />
                         </div>
                         <div>
-                          <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2">Video ID</label>
+                          <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-2">Video ID</label>
                           <input 
                             type="text" 
                             value={lesson.videoUrl} 
                             onChange={e => updateLesson(index, { videoUrl: e.target.value })} 
                             placeholder="Örn: YouTube ID"
-                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-5 text-slate-900 font-bold focus:border-indigo-600 outline-none transition-all" 
+                            className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-6 py-5 text-slate-900 dark:text-slate-100 font-bold focus:border-indigo-600 outline-none transition-all" 
                           />
                         </div>
                         <div className="grid grid-cols-2 gap-6">
                           <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">XP Ödülü</label>
-                            <input type="number" value={lesson.xpReward} onChange={e => updateLesson(index, { xpReward: +e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-5 text-slate-900 font-bold focus:border-indigo-600 outline-none" />
+                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1">XP Ödülü</label>
+                            <input type="number" value={lesson.xpReward} onChange={e => updateLesson(index, { xpReward: +e.target.value })} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-6 py-5 text-slate-900 dark:text-slate-100 font-bold focus:border-indigo-600 outline-none" />
                           </div>
                           <div>
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Süre (sn)</label>
-                            <input type="number" value={lesson.durationInSeconds} onChange={e => updateLesson(index, { durationInSeconds: +e.target.value })} className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-6 py-5 text-slate-900 font-bold focus:border-indigo-600 outline-none" />
+                            <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block mb-1">Süre (sn)</label>
+                            <input type="number" value={lesson.durationInSeconds} onChange={e => updateLesson(index, { durationInSeconds: +e.target.value })} className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-6 py-5 text-slate-900 dark:text-slate-100 font-bold focus:border-indigo-600 outline-none" />
                           </div>
                         </div>
                       </div>
 
-                      <div className="pt-8 border-t border-slate-100">
+                      <div className="pt-8 border-t border-slate-100 dark:border-slate-800">
                         <div className="flex items-center justify-between mb-6">
                           <label className="flex items-center gap-4 cursor-pointer group/quiz">
                             <div className={`w-12 h-7 rounded-full transition-all relative ${lesson.hasQuiz ? 'bg-indigo-600' : 'bg-slate-200'}`}>
@@ -464,24 +469,24 @@ export default function CourseBuilder() {
                             <span className="text-sm font-black text-slate-500 group-hover/quiz:text-indigo-600 transition-colors uppercase tracking-widest">Quiz Dahil Et</span>
                           </label>
                           {lesson.hasQuiz && (
-                            <div className="flex items-center gap-3 bg-indigo-50 px-4 py-2 rounded-2xl border border-indigo-100">
-                              <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Başarı Notu:</span>
-                              <input type="number" value={lesson.quizMinScore} onChange={e => updateLesson(index, { quizMinScore: +e.target.value })} className="bg-transparent w-8 text-center text-sm font-black text-indigo-600 focus:outline-none" />
+                            <div className="flex items-center gap-3 bg-indigo-50 dark:bg-indigo-950/30 px-4 py-2 rounded-2xl border border-indigo-100 dark:border-indigo-900/50">
+                              <span className="text-[10px] font-black text-indigo-400 dark:text-indigo-500 uppercase tracking-widest">Başarı Notu:</span>
+                              <input type="number" value={lesson.quizMinScore} onChange={e => updateLesson(index, { quizMinScore: +e.target.value })} className="bg-transparent w-8 text-center text-sm font-black text-indigo-600 dark:text-indigo-400 focus:outline-none" />
                             </div>
                           )}
                         </div>
                         
                         {lesson.hasQuiz && (
-                          <div className="bg-indigo-50/50 border border-dashed border-indigo-100 rounded-[2rem] p-8 text-center">
-                             <HelpCircle size={24} className="text-indigo-300 mx-auto mb-4" />
-                             <p className="text-indigo-600 font-black text-xs uppercase tracking-widest leading-loose">Quiz Soruları Otomatik Kaydedilecektir.<br/>Dersi kaydettiğinde temel bir set oluşur.</p>
+                          <div className="bg-indigo-50/50 dark:bg-indigo-950/20 border border-dashed border-indigo-100 dark:border-indigo-900/50 rounded-[2rem] p-8 text-center">
+                             <HelpCircle size={24} className="text-indigo-300 dark:text-indigo-700 mx-auto mb-4" />
+                             <p className="text-indigo-600 dark:text-indigo-400 font-black text-xs uppercase tracking-widest leading-loose">Quiz Soruları Otomatik Kaydedilecektir.<br/>Dersi kaydettiğinde temel bir set oluşur.</p>
                           </div>
                         )}
                       </div>
                     </div>
 
                     <div className="flex lg:flex-col gap-3">
-                       <button onClick={() => deleteLesson(index)} className="w-14 h-14 bg-red-50 hover:bg-red-600 text-red-500 hover:text-white border border-red-100 rounded-2xl flex items-center justify-center transition-all shadow-sm">
+                       <button onClick={() => deleteLesson(index)} className="w-14 h-14 bg-red-50 dark:bg-red-950/30 hover:bg-red-600 dark:hover:bg-red-500 text-red-500 dark:text-red-400 hover:text-white border border-red-100 dark:border-red-900/50 rounded-2xl flex items-center justify-center transition-all shadow-sm">
                          <Trash2 size={24} />
                        </button>
                     </div>
@@ -490,13 +495,13 @@ export default function CourseBuilder() {
               ))}
             </Reorder.Group>
 
-            <div className="sticky bottom-8 z-40 flex items-center justify-between bg-white/90 backdrop-blur-2xl border border-slate-200 p-8 rounded-[3rem] shadow-2xl shadow-indigo-600/10">
+            <div className="sticky bottom-8 z-40 flex items-center justify-between bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl border border-slate-200 dark:border-slate-800 p-8 rounded-[3rem] shadow-2xl shadow-indigo-600/10 dark:shadow-indigo-500/10">
               <div className="hidden md:block">
-                <p className="font-black text-2xl text-slate-900 tracking-tight">{lessons.length} DERS</p>
-                <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em]">Müfredat Hazır</p>
+                <p className="font-black text-2xl text-slate-900 dark:text-slate-100 tracking-tight">{lessons.length} DERS</p>
+                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-black uppercase tracking-[0.2em]">Müfredat Hazır</p>
               </div>
               <div className="flex items-center gap-4 w-full md:w-auto">
-                 <button onClick={() => setStep('course')} className="flex-1 md:flex-none px-10 py-5 rounded-[1.5rem] font-black text-slate-500 hover:text-indigo-600 transition-all uppercase tracking-widest text-sm">Geri Git</button>
+                 <button onClick={() => setStep('course')} className="flex-1 md:flex-none px-10 py-5 rounded-[1.5rem] font-black text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-300 transition-all uppercase tracking-widest text-sm">Geri Git</button>
                  <button 
                   onClick={handleSaveAll}
                   disabled={loading}
@@ -510,14 +515,14 @@ export default function CourseBuilder() {
         )}
 
         {step === 'done' && (
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="max-w-xl mx-auto text-center py-24 bg-white border border-slate-200 rounded-[4rem] p-16 shadow-2xl shadow-indigo-600/5">
-            <div className="w-28 h-28 bg-emerald-50 border-4 border-emerald-100 rounded-full flex items-center justify-center mx-auto mb-10 shadow-lg shadow-emerald-500/10">
-              <CheckCircle className="text-emerald-500" size={56} />
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="max-w-xl mx-auto text-center py-24 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[4rem] p-16 shadow-2xl shadow-indigo-600/5 dark:shadow-indigo-500/5">
+            <div className="w-28 h-28 bg-emerald-50 dark:bg-emerald-950/30 border-4 border-emerald-100 dark:border-emerald-900/50 rounded-full flex items-center justify-center mx-auto mb-10 shadow-lg shadow-emerald-500/10">
+              <CheckCircle className="text-emerald-500 dark:text-emerald-400" size={56} />
             </div>
-            <h2 className="text-5xl font-black mb-6 text-slate-900 tracking-tighter">HARİKA İŞ! 🎉</h2>
-            <p className="text-slate-500 text-xl mb-12 font-medium leading-relaxed">Kursun başarıyla {isPublished ? 'yayınlandı' : 'kaydedildi'}. Öğrencilerin bu yeni bilgileri keşfetmesi için sabırsızlanıyoruz.</p>
+            <h2 className="text-5xl font-black mb-6 text-slate-900 dark:text-slate-100 tracking-tighter">HARİKA İŞ! 🎉</h2>
+            <p className="text-slate-500 dark:text-slate-400 text-xl mb-12 font-medium leading-relaxed">Kursun başarıyla {isPublished ? 'yayınlandı' : 'kaydedildi'}. Öğrencilerin bu yeni bilgileri keşfetmesi için sabırsızlanıyoruz.</p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button onClick={() => navigate('/teacher/dashboard')} className="flex-1 bg-slate-900 text-white hover:bg-black transition-all py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-slate-900/10">Panele Git</button>
+              <button onClick={() => navigate('/teacher/dashboard')} className="flex-1 bg-slate-900 dark:bg-slate-800 text-white hover:bg-black dark:hover:bg-slate-700 transition-all py-5 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-slate-900/10 dark:shadow-black/20">Panele Git</button>
               <button onClick={() => navigate(`/teacher/analytics/${courseId}`)} className="flex-1 bg-indigo-600 text-white hover:bg-indigo-700 transition-all py-5 rounded-2xl font-black shadow-xl shadow-indigo-600/10 uppercase tracking-widest">Analitiğe Bak</button>
             </div>
           </motion.div>

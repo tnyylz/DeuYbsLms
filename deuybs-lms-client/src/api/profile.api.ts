@@ -10,3 +10,8 @@ export const updateProfileApi = async (data: UpdateProfileRequest): Promise<{ me
   const res = await axiosInstance.put('/Profile', data);
   return res.data;
 };
+
+export const changePasswordApi = async (data: any): Promise<{ message: string }> => {
+  const res = await axiosInstance.post('/Profile/change-password', data);
+  return res.data;
+};

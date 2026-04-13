@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Infrastructure/Persistence/Configurations/AppUserConfiguration.cs
+// Path: DeuYbsLms.Infrastructure/Persistence/Configurations/AppUserConfiguration.cs
 
 using DeuYbsLms.Domain.Entities.Identity;
 using Microsoft.EntityFrameworkCore;

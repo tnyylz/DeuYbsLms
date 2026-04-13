@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Domain/Entities/Identity/AppUser.cs
+// Path: DeuYbsLms.Domain/Entities/Identity/AppUser.cs
 
 using DeuYbsLms.Domain.Entities.Common;
 using DeuYbsLms.Domain.Entities.Progress;

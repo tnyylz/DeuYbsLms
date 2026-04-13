@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Infrastructure/Services/AuthService.cs
+// Path: DeuYbsLms.Infrastructure/Services/AuthService.cs
 
 using DeuYbsLms.Application.DTOs.Auth;
 using DeuYbsLms.Application.Interfaces.Repositories;
@@ -44,6 +44,7 @@ public class AuthService : IAuthService
             {
                 Id = Guid.NewGuid(),
                 AppUserId = user.Id,
+                StudentNumber = request.StudentNumber,
                 TotalXp = 0,
                 CurrentLevel = 1,
                 XpToNextLevel = 100,
@@ -102,5 +103,30 @@ public class AuthService : IAuthService
             XpToNextLevel = user.StudentProfile?.XpToNextLevel ?? 0,
             BadgeCount = user.StudentProfile?.EarnedBadges.Count ?? 0
         });
+    }
+
+    public async Task<Result<bool>> ChangePasswordAsync(Guid userId, ChangePasswordRequest request)
+    {
+        var user = await _userRepository.GetByIdAsync(userId);
+        if (user == null)
+            return Result<bool>.Failure("Kullanıcı bulunamadı.");
+
+        // 1. Eski şifre kontrolü
+        if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, user.PasswordHash))
+            return Result<bool>.Failure("Mevcut şifreniz hatalı.");
+
+        // 2. Yeni şifreler uyuşuyor mu?
+        if (request.NewPassword != request.ConfirmNewPassword)
+            return Result<bool>.Failure("Yeni şifreler birbiriyle eşleşmiyor.");
+
+        // 3. Yeni şifre eskisiyle aynı mı?
+        if (BCrypt.Net.BCrypt.Verify(request.NewPassword, user.PasswordHash))
+            return Result<bool>.Failure("Yeni şifre eski şifre ile aynı olamaz.");
+
+        // Şifreyi güncelle
+        user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+        await _userRepository.UpdateAsync(user);
+
+        return Result<bool>.Success(true);
     }
 }

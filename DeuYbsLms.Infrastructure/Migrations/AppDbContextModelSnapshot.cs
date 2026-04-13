@@ -388,8 +388,18 @@ namespace DeuYbsLms.Infrastructure.Migrations
                         .HasColumnType("int")
                         .HasDefaultValue(1);
 
+                    b.Property<int>("CurrentStreak")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastActivityDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("StudentNumber")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<int>("TotalXp")
                         .ValueGeneratedOnAdd()
@@ -408,6 +418,10 @@ namespace DeuYbsLms.Infrastructure.Migrations
 
                     b.HasIndex("AppUserId")
                         .IsUnique();
+
+                    b.HasIndex("StudentNumber")
+                        .IsUnique()
+                        .HasFilter("[StudentNumber] IS NOT NULL");
 
                     b.ToTable("StudentProfiles");
                 });

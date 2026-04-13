@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Infrastructure/Persistence/Configurations/StudentProfileConfiguration.cs
+// Path: DeuYbsLms.Infrastructure/Persistence/Configurations/StudentProfileConfiguration.cs
 
 using DeuYbsLms.Domain.Entities.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -11,6 +11,13 @@ public class StudentProfileConfiguration : IEntityTypeConfiguration<StudentProfi
     public void Configure(EntityTypeBuilder<StudentProfile> builder)
     {
         builder.HasKey(sp => sp.Id);
+
+        builder.Property(sp => sp.StudentNumber)
+            .HasMaxLength(20);
+
+        builder.HasIndex(sp => sp.StudentNumber)
+            .IsUnique()
+            .HasFilter("[StudentNumber] IS NOT NULL");
 
         builder.Property(sp => sp.TotalXp).HasDefaultValue(0);
         builder.Property(sp => sp.CurrentLevel).HasDefaultValue(1);

@@ -46,6 +46,7 @@ export interface CourseDto {
   totalDurationInSeconds: number;
   totalXpReward: number;
   teacherName: string;
+  tags: string[];
 }
 
 export interface CourseDetailDto {
@@ -58,6 +59,7 @@ export interface CourseDetailDto {
   totalXpReward: number;
   teacherName: string;
   lessons: LessonDto[];
+  tags: string[];
 }
 
 export interface LessonDto {
@@ -191,6 +193,7 @@ export interface StudentProfileDto {
   firstName: string;
   lastName: string;
   email: string;
+  studentNumber?: string;
   profilePictureUrl?: string;
   totalXp: number;
   currentLevel: number;
@@ -205,7 +208,14 @@ export interface StudentProfileDto {
 export interface UpdateProfileRequest {
   firstName: string;
   lastName: string;
+  studentNumber?: string;
   profilePictureUrl?: string;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmNewPassword: string;
 }
 
 export interface StudentAnalyticsDto {

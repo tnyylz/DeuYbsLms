@@ -12,6 +12,7 @@ public class StudentProfile : BaseEntity
     public Guid AppUserId { get; set; }
     public AppUser AppUser { get; set; } = null!;
 
+    public string? StudentNumber { get; set; }
     public int TotalXp { get; set; } = 0;
     public int CurrentLevel { get; set; } = 1;
     public int XpToNextLevel { get; set; } = 100;

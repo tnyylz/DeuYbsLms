@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Application/DTOs/Auth/RegisterRequestDto.cs
+// Path: DeuYbsLms.Application/DTOs/Auth/RegisterRequestDto.cs
 
 using DeuYbsLms.Domain.Enums;
 
@@ -10,5 +10,6 @@ public class RegisterRequestDto
     public string LastName { get; set; } = string.Empty;
     public string Email { get; set; } = string.Empty;
     public string Password { get; set; } = string.Empty;
+    public string? StudentNumber { get; set; }
     public UserRole Role { get; set; } = UserRole.Student;
 }

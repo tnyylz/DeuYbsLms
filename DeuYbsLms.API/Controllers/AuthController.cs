@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.API/Controllers/AuthController.cs
+// Path: DeuYbsLms.API/Controllers/AuthController.cs
 // Sınıf türü: Controller (Add > Controller > API Controller - Empty)
 
 using DeuYbsLms.Application.DTOs.Auth;
@@ -23,10 +23,19 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
     {
-        var result = await _authService.RegisterAsync(request);
-        if (!result.IsSuccess)
-            return BadRequest(result.ErrorMessage);
-        return Ok(result.Data);
+        try
+        {
+            var result = await _authService.RegisterAsync(request);
+            if (!result.IsSuccess)
+                return BadRequest(result.ErrorMessage);
+            return Ok(result.Data);
+        }
+        catch (Exception ex)
+        {
+            // Log the error (could use a logger)
+            Console.WriteLine($"Register Error: {ex}");
+            return StatusCode(500, new { message = "Sunucu tarafında bir hata oluştu.", details = ex.Message, innerException = ex.InnerException?.Message });
+        }
     }
 
     [HttpPost("login")]

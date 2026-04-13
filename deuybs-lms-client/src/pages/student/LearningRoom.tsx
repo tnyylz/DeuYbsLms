@@ -134,11 +134,11 @@ export default function LearningRoom() {
 
   if (!course || !lesson || !progress) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-900">
-        <div className="bg-white p-8 rounded-3xl shadow-xl border border-slate-200 text-center">
-          <BookOpen className="mx-auto text-slate-200 mb-4" size={48} />
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-slate-900 dark:text-white transition-colors duration-300">
+        <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800 text-center">
+          <BookOpen className="mx-auto text-slate-200 dark:text-slate-800 mb-4" size={48} />
           <h2 className="text-xl font-bold mb-2">Ders bulunamadı</h2>
-          <button onClick={() => navigate(`/course/${courseId}/detail`)} className="text-indigo-600 font-bold hover:underline">Kurs Sayfasına Dön</button>
+          <button onClick={() => navigate(`/course/${courseId}/detail`)} className="text-indigo-600 dark:text-indigo-400 font-bold hover:underline">Kurs Sayfasına Dön</button>
         </div>
       </div>
     );
@@ -150,38 +150,38 @@ export default function LearningRoom() {
   const nextLessonId = getNextLessonId();
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 font-sans flex flex-col">
+    <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-white font-sans flex flex-col transition-colors duration-300">
       {/* Upper Navigation / Progress Bar */}
-      <nav className="bg-white border-b border-slate-200 px-6 py-3 sticky top-0 z-30 shadow-sm">
+      <nav className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-6 py-3 sticky top-0 z-30 shadow-sm transition-colors">
         <div className="max-w-[1800px] mx-auto flex items-center justify-between gap-8">
           <div className="flex items-center gap-4 min-w-0">
             <button 
               onClick={() => navigate(`/course/${courseId}/detail`)} 
-              className="p-2 hover:bg-slate-100 rounded-xl text-slate-500 hover:text-indigo-600 transition-all group"
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all group"
               title="Kursa Geri Dön"
             >
               <ChevronLeft size={20} className="group-hover:-translate-x-0.5 transition-transform" />
             </button>
-            <div className="h-8 w-px bg-slate-200 mx-2 hidden md:block"></div>
+            <div className="h-8 w-px bg-slate-200 dark:bg-slate-800 mx-2 hidden md:block"></div>
             <div className="min-w-0">
-               <h1 className="text-sm font-bold text-slate-900 truncate group-hover:text-indigo-600 transition-colors cursor-default">
+               <h1 className="text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors cursor-default">
                 {course.title}
               </h1>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Mevcut Ders:</span>
-                <span className="text-[10px] text-indigo-600 font-bold truncate">{lesson.title}</span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wider">Mevcut Ders:</span>
+                <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold truncate">{lesson.title}</span>
               </div>
             </div>
           </div>
 
           <div className="flex-1 max-w-md hidden lg:block">
              <div className="flex justify-between items-center mb-1.5">
-               <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Kurs İlerlemesi</span>
-               <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">%{progress.completionPercentage}</span>
+               <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Kurs İlerlemesi</span>
+               <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/40 px-2 py-0.5 rounded-full">%{progress.completionPercentage}</span>
              </div>
-             <div className="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+             <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
                <div 
-                className="bg-indigo-600 h-full rounded-full transition-all duration-1000 ease-out"
+                className="bg-indigo-600 dark:bg-indigo-500 h-full rounded-full transition-all duration-1000 ease-out"
                 style={{ width: `${progress.completionPercentage}%` }}
                />
              </div>
@@ -189,8 +189,8 @@ export default function LearningRoom() {
 
           <div className="flex items-center gap-3">
              <div className="text-right hidden sm:block">
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tight">Kazanılan Toplam XP</p>
-                <p className="text-sm font-black text-amber-500 flex items-center justify-end gap-1">
+                <p className="text-[10px] text-slate-500 dark:text-slate-500 font-bold uppercase tracking-tight">Kazanılan Toplam XP</p>
+                <p className="text-sm font-black text-amber-500 dark:text-amber-400 flex items-center justify-end gap-1">
                   <Zap size={14} fill="currentColor" /> {progress.completedLessons * 10}
                 </p>
              </div>
@@ -200,29 +200,29 @@ export default function LearningRoom() {
 
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         {/* Main Content (Left) */}
-        <main className="flex-1 overflow-y-auto bg-slate-50 custom-scrollbar relative">
+        <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 custom-scrollbar relative">
           <div className="max-w-5xl mx-auto p-4 md:p-8 space-y-8">
             
             {/* Video Section */}
-            <div className="aspect-video bg-black rounded-2xl overflow-hidden shadow-xl border border-slate-200 relative group">
+            <div className="aspect-video bg-black rounded-2xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800 relative group transition-colors">
               <VideoPlayer videoUrl={lesson.videoUrl} onVideoComplete={handleVideoComplete} />
             </div>
 
             {/* Lesson Info & Actions */}
-            <div className="bg-white border border-slate-200 rounded-[32px] p-8 space-y-8 shadow-sm">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[32px] p-8 space-y-8 shadow-sm transition-colors">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 bg-indigo-50 text-indigo-600 text-[10px] font-black rounded uppercase tracking-widest border border-indigo-100">
+                    <span className="px-2 py-0.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-[10px] font-black rounded uppercase tracking-widest border border-indigo-100 dark:border-indigo-800">
                       Modül {lesson.orderIndex}
                     </span>
                     {videoCompleted && (
-                      <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                      <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/40 px-2 py-0.5 rounded border border-emerald-100 dark:border-emerald-800/50">
                         <CheckCircle size={10} /> İzleme Tamamlandı
                       </span>
                     )}
                   </div>
-                  <h2 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">{lesson.title}</h2>
+                  <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{lesson.title}</h2>
                 </div>
 
                 <div className="flex flex-wrap gap-3">
@@ -246,7 +246,7 @@ export default function LearningRoom() {
                   {!videoCompleted && (
                     <button 
                       onClick={handleVideoComplete}
-                      className="flex items-center gap-2 px-6 py-3 bg-white hover:bg-slate-100 text-slate-900 border border-slate-200 rounded-2xl font-bold text-sm transition-all shadow-md hover:-translate-y-0.5 active:scale-95"
+                      className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-2xl font-bold text-sm transition-all shadow-md hover:-translate-y-0.5 active:scale-95"
                     >
                       <CheckCircle size={18} />
                       Dersi Manuel Tamamla
@@ -267,7 +267,7 @@ export default function LearningRoom() {
 
               {/* Warnings/Status */}
               {!videoCompleted && lesson.hasQuiz && (
-                <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl flex items-center gap-3 text-amber-700 text-xs font-medium">
+                <div className="p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/50 rounded-2xl flex items-center gap-3 text-amber-700 dark:text-amber-400 text-xs font-medium">
                   <Info size={16} className="shrink-0" />
                   <span>Quiz'e erişmek için önce ders videosunu izlemeli veya tamamlamalısınız.</span>
                 </div>
@@ -277,11 +277,11 @@ export default function LearningRoom() {
         </main>
 
         {/* Sidebar (Right) */}
-        <aside className="w-full md:w-[350px] lg:w-[400px] border-l border-slate-200 bg-slate-50 flex flex-col z-20 shadow-inner">
-          <div className="p-6 border-b border-slate-200 flex items-center justify-between bg-white sticky top-0">
+        <aside className="w-full md:w-[350px] lg:w-[400px] border-l border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-col z-20 shadow-inner transition-colors">
+          <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 sticky top-0 transition-colors">
              <div>
-                <h3 className="font-bold text-slate-900 text-lg">Kurs İçeriği</h3>
-                <p className="text-xs text-slate-500 font-medium mt-0.5">{progress.completedLessons} / {course.lessons.length} Ders Tamamlandı</p>
+                <h3 className="font-bold text-slate-900 dark:text-white text-lg">Kurs İçeriği</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">{progress.completedLessons} / {course.lessons.length} Ders Tamamlandı</p>
              </div>
           </div>
 
@@ -297,8 +297,8 @@ export default function LearningRoom() {
                   key={l.id}
                   disabled={!status && !isActive}
                   onClick={() => navigate(`/course/${courseId}/lesson/${l.id}`)}
-                  className={`w-full p-5 flex items-start gap-4 transition-all border-b border-slate-200 text-left group relative ${
-                    isActive ? 'bg-indigo-50 border-l-4 border-l-indigo-600' : 'hover:bg-slate-100 bg-white'
+                  className={`w-full p-5 flex items-start gap-4 transition-all border-b border-slate-200 dark:border-slate-800 text-left group relative ${
+                    isActive ? 'bg-indigo-50 dark:bg-indigo-900/40 border-l-4 border-l-indigo-600' : 'hover:bg-slate-100 dark:hover:bg-slate-800 bg-white dark:bg-slate-900'
                   } ${!status ? 'opacity-60 cursor-not-allowed grayscale' : 'cursor-pointer'}`}
                 >
                   <div className={`mt-1 shrink-0 w-6 h-6 rounded-full flex items-center justify-center border-2 transition-colors ${
@@ -310,7 +310,7 @@ export default function LearningRoom() {
                   </div>
                   
                   <div className="min-w-0">
-                    <p className={`text-sm font-bold truncate transition-colors ${isActive ? 'text-indigo-600' : status ? 'text-slate-700' : 'text-slate-400'}`}>
+                    <p className={`text-sm font-bold truncate transition-colors ${isActive ? 'text-indigo-600 dark:text-indigo-400' : status ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400 dark:text-slate-600'}`}>
                       {l.title}
                     </p>
                     <div className="flex items-center gap-3 mt-1">
