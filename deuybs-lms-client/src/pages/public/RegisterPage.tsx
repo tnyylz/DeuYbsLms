@@ -28,7 +28,10 @@ export default function RegisterPage() {
       );
       navigate('/student/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.errorMessage || 'Kayıt başarısız. Bilgilerinizi kontrol edin.');
+      const msg = err.response?.data?.errorMessage || 
+                  (typeof err.response?.data === 'string' ? err.response.data : null) || 
+                  'Kayıt başarısız. Bilgilerinizi kontrol edin.';
+      setError(msg);
     } finally {
       setLoading(false);
     }

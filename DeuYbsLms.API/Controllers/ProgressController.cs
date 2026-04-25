@@ -68,4 +68,13 @@ public class ProgressController : ControllerBase
             return BadRequest(result.ErrorMessage);
         return Ok(result.Data);
     }
+
+    [HttpPost("update-video-progress/{lessonId:guid}")]
+    public async Task<IActionResult> UpdateVideoProgress(Guid lessonId, [FromBody] int second)
+    {
+        var result = await _progressService.SaveVideoProgressAsync(GetStudentId(), lessonId, second);
+        if (!result.IsSuccess)
+            return BadRequest(result.ErrorMessage);
+        return Ok();
+    }
 }

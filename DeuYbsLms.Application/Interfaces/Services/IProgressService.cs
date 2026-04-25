@@ -12,4 +12,5 @@ public interface IProgressService
     Task<Result<LessonProgressDto>> CompleteVideoAsync(Guid studentId, Guid lessonId);
     Task<Result<QuizResultDto>> SubmitQuizAsync(Guid studentId, SubmitQuizDto request);
     Task<Result<List<EnrollmentDto>>> GetStudentEnrollmentsAsync(Guid studentId);
+    Task<Result<bool>> SaveVideoProgressAsync(Guid studentId, Guid lessonId, int second);
 }

@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Infrastructure/Persistence/Repositories/CourseRepository.cs
+// Path: DeuYbsLms.Infrastructure/Persistence/Repositories/CourseRepository.cs
 
 using DeuYbsLms.Application.Interfaces.Repositories;
 using DeuYbsLms.Domain.Entities.Course;
@@ -45,7 +45,14 @@ public class CourseRepository : Repository<Course>, ICourseRepository
             .Include(c => c.Tags)
             .Where(c => c.IsPublished &&
                 (c.Title.Contains(searchTerm) ||
-                 c.Description.Contains(searchTerm) ||
+                  c.Description.Contains(searchTerm) ||
                  c.Tags.Any(t => t.Name.Contains(searchTerm))))
+            .ToListAsync();
+
+    public async Task<List<Course>> GetCoursesForAdminAsync()
+        => await _context.Courses
+            .Include(c => c.Teacher)
+            .Include(c => c.Enrollments)
+            .OrderByDescending(c => c.CreatedAt)
             .ToListAsync();
 }

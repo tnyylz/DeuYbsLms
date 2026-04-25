@@ -12,6 +12,7 @@ import ThemeToggle from '../../components/shared/ThemeToggle';
 import { changePasswordApi } from '../../api/profile.api';
 import type { StudentProfileDto } from '../../types';
 import { motion, AnimatePresence } from 'framer-motion';
+import EvolvingBadge from '../../components/dashboard/EvolvingBadge';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -403,16 +404,9 @@ export default function ProfilePage() {
             {profile?.badges && profile.badges.length > 0 && (
               <div className="mt-12 pt-10 border-t border-slate-100 dark:border-slate-800 relative z-10">
                 <p className="text-xs font-black uppercase tracking-[0.2em] mb-6 text-slate-400 dark:text-slate-500">Son Kazanılan Rozetler</p>
-                <div className="flex flex-wrap gap-4">
+                <div className="flex flex-wrap gap-8">
                   {profile.badges.map((badge, i) => (
-                    <motion.div 
-                      key={i}
-                      whileHover={{ scale: 1.05 }}
-                      className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 px-5 py-3 rounded-2xl hover:bg-white dark:hover:bg-slate-800 hover:shadow-md hover:border-indigo-100 dark:hover:border-indigo-500 transition-all font-bold text-slate-700 dark:text-slate-200"
-                    >
-                      <span className="text-2xl">{badge.iconEmoji}</span>
-                      <span className="text-sm">{badge.displayName}</span>
-                    </motion.div>
+                    <EvolvingBadge key={i} badge={badge} />
                   ))}
                 </div>
               </div>

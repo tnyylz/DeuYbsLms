@@ -4,10 +4,12 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   BookOpen, ChevronLeft, ChevronRight, Loader2, HelpCircle, 
-  Lock, CheckCircle, Zap, Info, Clock, Play 
+  Lock, CheckCircle, Zap, Info, Clock, Play, FileDown 
 } from 'lucide-react';
+import { getFileUrl } from '../../utils/fileUtils';
 import VideoPlayer from '../../components/VideoPlayer';
 import QuizModal from '../../components/QuizModal';
+import { LevelUpModal } from '../../components/shared/LevelUpModal';
 import { getCourseDetailApi, getQuizQuestionsApi } from '../../api/courses.api';
 import { getCourseProgressApi, completeVideoApi, submitQuizApi } from '../../api/progress.api';
 import type { 
@@ -29,6 +31,10 @@ export default function LearningRoom() {
   const [showQuiz, setShowQuiz] = useState(false);
   const [questions, setQuestions] = useState<QuestionDto[]>([]);
   const [quizLoading, setQuizLoading] = useState(false);
+  const [progress, setProgress] = useState<CourseProgressDto | null>(null);
+
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [newLevel, setNewLevel] = useState(1);
 
   const fetchAll = useCallback(async () => {
     if (!courseId || !lessonId) return;
@@ -54,15 +60,25 @@ export default function LearningRoom() {
     fetchAll(); 
   }, [courseId, lessonId, fetchAll]);
 
-  const [progress, setProgress] = useState<CourseProgressDto | null>(null);
-
   const handleVideoComplete = async () => {
     if (!lessonId) return;
     const loadingToast = toast.loading('İlerleme kaydediliyor...');
     try {
-      await completeVideoApi(lessonId);
+      const res = await completeVideoApi(lessonId);
       await fetchAll();
       toast.success('Ders başarıyla tamamlandı! ✅', { id: loadingToast });
+      
+      if (res.xpResult) {
+        toast.success(`+${res.xpResult.xpAwarded} XP Kazandın!`, {
+          icon: '✨',
+          duration: 3000,
+        });
+
+        if (res.xpResult.didLevelUp && res.xpResult.newLevel) {
+          setNewLevel(res.xpResult.newLevel);
+          setShowLevelUp(true);
+        }
+      }
     } catch (err: any) { 
       console.error(err);
       const errorMsg = err.response?.data?.message || err.response?.data || 'Ders tamamlanırken bir hata oluştu veya bu ders hala kilitli.';
@@ -96,6 +112,19 @@ export default function LearningRoom() {
       const result = await submitQuizApi(lessonId!, payload);
       await fetchAll();
       toast.success(result.isPassed ? 'Tebrikler, quizi geçtiniz! 🎉' : 'Üzgünüz, geçme puanının altında kaldınız. ❌', { id: loadingToast });
+      
+      if (result.xpResult && result.isPassed) {
+        toast.success(`+${result.xpResult.xpAwarded} XP Kazandın!`, {
+          icon: '✨',
+          duration: 3000,
+        });
+
+        if (result.xpResult.didLevelUp && result.xpResult.newLevel) {
+          setNewLevel(result.xpResult.newLevel);
+          setShowLevelUp(true);
+        }
+      }
+
       return result;
     } catch (err: any) {
       console.error(err);
@@ -203,10 +232,64 @@ export default function LearningRoom() {
         <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 custom-scrollbar relative">
           <div className="max-w-5xl mx-auto p-4 md:p-8 space-y-8">
             
-            {/* Video Section */}
-            <div className="aspect-video bg-black rounded-2xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800 relative group transition-colors">
-              <VideoPlayer videoUrl={lesson.videoUrl} onVideoComplete={handleVideoComplete} />
-            </div>
+            {/* Video Section or Document Only */}
+            {lesson.videoUrl ? (
+                <div className="aspect-video bg-black rounded-2xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800 relative group transition-colors">
+                  <VideoPlayer 
+                    lessonId={lesson.id}
+                    videoUrl={lesson.videoUrl} 
+                    initialTime={lessonProgress?.lastWatchedSecond || 0}
+                    onVideoComplete={handleVideoComplete} 
+                  />
+                </div>
+            ) : lesson.resourceUrl ? (
+               <div className="aspect-video bg-slate-100 dark:bg-slate-900 rounded-2xl flex flex-col items-center justify-center shadow-xl border border-slate-200 dark:border-slate-800 transition-colors px-6 text-center">
+                  <div className="w-20 h-20 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mb-6 shadow-md">
+                     <FileDown size={32} />
+                  </div>
+                  <h3 className="text-xl md:text-2xl font-black text-slate-800 dark:text-white mb-3">Ders Dokümanı</h3>
+                  <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-8 max-w-md">Bu ders için sisteme bir video yerine indirilebilir kaynak yüklenmiştir. Materyalleri aşağıdan cihazınıza indirebilirsiniz.</p>
+                  <a 
+                    href={getFileUrl(lesson.resourceUrl)} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    onClick={() => {
+                      if (!videoCompleted) handleVideoComplete();
+                    }}
+                    className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl shadow-xl shadow-indigo-200 dark:shadow-none flex items-center gap-3 transition-all hover:-translate-y-1"
+                  >
+                     <FileDown size={20} />
+                     Uzantıyı İndir
+                  </a>
+                  {!videoCompleted && (
+                    <p className="text-xs font-bold text-amber-600 dark:text-amber-500 mt-6 max-w-sm bg-amber-50 dark:bg-amber-900/20 p-3 rounded-xl border border-amber-100 dark:border-amber-800/50">
+                      Önemli: İlerlemek için materyali indirmeniz gerekmektedir. İndirdikten sonra "Sonraki Derse Geç" butonu aktif olacaktır.
+                    </p>
+                  )}
+               </div>
+            ) : (
+                <div className="aspect-video bg-slate-100 dark:bg-slate-900 rounded-2xl flex flex-col items-center justify-center shadow-xl border border-slate-200 dark:border-slate-800 transition-colors">
+                  <p className="text-slate-500 font-medium">Bu dersin içeriği bulunamadı.</p>
+                </div>
+            )}
+
+            {/* Supplemental Document (if video also exists) */}
+            {lesson.videoUrl && lesson.resourceUrl && (
+               <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/40 rounded-[28px] p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-sm">
+                  <div className="flex items-center gap-5">
+                     <div className="bg-white dark:bg-slate-800 p-4 rounded-full text-emerald-600 dark:text-emerald-400 shadow-md">
+                        <FileDown size={28} />
+                     </div>
+                     <div>
+                        <h4 className="font-black tracking-tight text-lg text-emerald-900 dark:text-emerald-200">Ek Kaynaklar</h4>
+                        <p className="text-sm font-medium text-emerald-700 dark:text-emerald-500 mt-1">Bu video dersini destekleyici ek materyaller sisteme yüklenmiş.</p>
+                     </div>
+                  </div>
+                  <a href={getFileUrl(lesson.resourceUrl)} target="_blank" rel="noopener noreferrer" className="whitespace-nowrap w-full sm:w-auto text-center px-8 py-4 bg-white dark:bg-slate-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 font-black tracking-wide uppercase rounded-2xl shadow-sm border border-emerald-100 dark:border-emerald-800 flex items-center justify-center gap-3 transition-colors">
+                     <FileDown size={20} /> İndir
+                  </a>
+               </div>
+            )}
 
             {/* Lesson Info & Actions */}
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[32px] p-8 space-y-8 shadow-sm transition-colors">
@@ -229,7 +312,7 @@ export default function LearningRoom() {
                   {lesson.hasQuiz && (
                     <button
                       onClick={handleOpenQuiz}
-                      disabled={!videoCompleted || quizPassed}
+                      disabled={!videoCompleted || quizPassed || quizLoading}
                       className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold text-sm transition-all border ${
                         quizPassed 
                           ? 'bg-emerald-50 border-emerald-200 text-emerald-600' 
@@ -238,28 +321,27 @@ export default function LearningRoom() {
                             : 'bg-indigo-600 hover:bg-indigo-700 border-indigo-600 text-white shadow-lg shadow-indigo-200 hover:-translate-y-0.5'
                       }`}
                     >
-                      <HelpCircle size={18} />
-                      {quizPassed ? 'Quiz Başarıyla Geçildi' : 'Bilgini Sına: Quiz'}
+                      {quizLoading ? <Loader2 size={18} className="animate-spin" /> : <HelpCircle size={18} />}
+                      {quizPassed ? 'Quiz Başarıyla Geçildi' : quizLoading ? 'Hazırlanıyor...' : 'Bilgini Sına: Quiz'}
                     </button>
                   )}
 
-                  {!videoCompleted && (
-                    <button 
-                      onClick={handleVideoComplete}
-                      className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700 rounded-2xl font-bold text-sm transition-all shadow-md hover:-translate-y-0.5 active:scale-95"
-                    >
-                      <CheckCircle size={18} />
-                      Dersi Manuel Tamamla
-                    </button>
-                  )}
-
-                  {isLessonFinished && nextLessonId && (
+                  {isLessonFinished && (
                     <button 
                       onClick={() => handleNextLesson()}
-                      className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-bold text-sm transition-all shadow-lg shadow-indigo-200 hover:-translate-y-0.5"
+                      className="flex items-center gap-3 px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-bold text-sm transition-all shadow-lg shadow-emerald-200 dark:shadow-none hover:-translate-y-0.5"
                     >
-                      Sonraki Derse Geç
-                      <ChevronRight size={18} />
+                      {nextLessonId ? (
+                        <>
+                          Sonraki Derse Geç
+                          <ChevronRight size={18} />
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle size={18} />
+                          Eğitimi Tamamla
+                        </>
+                      )}
                     </button>
                   )}
                 </div>
@@ -344,6 +426,12 @@ export default function LearningRoom() {
           onNextLesson={handleNextLesson}
         />
       )}
+
+      <LevelUpModal 
+        isOpen={showLevelUp} 
+        onClose={() => setShowLevelUp(false)} 
+        newLevel={newLevel} 
+      />
     </div>
   );
 }

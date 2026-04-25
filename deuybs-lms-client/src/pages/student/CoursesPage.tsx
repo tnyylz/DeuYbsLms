@@ -1,8 +1,8 @@
 // Path: src/pages/student/CoursesPage.tsx
 
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { BookOpen, Zap, ChevronLeft, Search, Clock, PlayCircle } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { BookOpen, Zap, ChevronLeft, Search, Clock, PlayCircle, Layout } from 'lucide-react';
 import { getCoursesApi } from '../../api/courses.api';
 import { getMyEnrollmentsApi } from '../../api/progress.api';
 import { getFileUrl } from '../../utils/fileUtils';
@@ -16,6 +16,7 @@ export default function CoursesPage() {
   const [enrollments, setEnrollments] = useState<EnrollmentDto[]>([]);
   const [filtered, setFiltered] = useState<CourseDto[]>([]);
   const [search, setSearch] = useState('');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'enrolled' | 'not-enrolled'>('all');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,7 +38,7 @@ export default function CoursesPage() {
     fetchData();
   }, []);
 
-  const handleLogout = () => { /* Logika logout jika diperlukan di sini, tapi di dashboard sudah ada */ };
+
 
   // ... (existing logic for filtering, duration formatting, etc.)
   useEffect(() => {
@@ -94,7 +95,12 @@ export default function CoursesPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
+            <Link to="/student/kanban" className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold transition-all text-sm group">
+               <Layout size={16} className="group-hover:rotate-12 transition-transform" /> 
+               Pano
+               <span className="bg-amber-400 text-amber-950 text-[8px] px-1.5 py-0.5 rounded-full animate-bounce">YENİ</span>
+            </Link>
             <ThemeToggle />
           </div>
         </div>
@@ -106,7 +112,7 @@ export default function CoursesPage() {
           <p className="text-slate-500 dark:text-slate-400 text-lg">Yeteneklerinizi geliştirmek için tasarlanmış eğitim programlarını keşfedin.</p>
         </div>
 
-        <div className="relative mb-12 group">
+        <div className="relative mb-8 group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
           <input 
             type="text" 
@@ -117,19 +123,55 @@ export default function CoursesPage() {
           />
         </div>
 
+        {/* Enrollment Filters */}
+        <div className="flex flex-wrap items-center gap-3 mb-12">
+          <button 
+            onClick={() => setFilterStatus('all')}
+            className={`px-6 py-2.5 rounded-full text-xs font-black transition-all border-2 ${filterStatus === 'all' ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none translate-y-[-2px]' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 hover:border-indigo-400'}`}
+          >
+            TÜM KURSLAR
+          </button>
+          <button 
+            onClick={() => setFilterStatus('enrolled')}
+            className={`px-6 py-2.5 rounded-full text-xs font-black transition-all border-2 flex items-center gap-2 ${filterStatus === 'enrolled' ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-200 dark:shadow-none translate-y-[-2px]' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 hover:border-emerald-400'}`}
+          >
+            <PlayCircle size={14} fill={filterStatus === 'enrolled' ? 'currentColor' : 'none'} />
+            KAYITLI OLDUKLARIM
+          </button>
+          <button 
+            onClick={() => setFilterStatus('not-enrolled')}
+            className={`px-6 py-2.5 rounded-full text-xs font-black transition-all border-2 ${filterStatus === 'not-enrolled' ? 'bg-slate-700 border-slate-700 text-white shadow-lg translate-y-[-2px]' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 hover:border-slate-400'}`}
+          >
+            KAYITLI OLMADIKLARIM
+          </button>
+        </div>
+
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filtered.map((course, idx) => {
             const level = levelLabel(course.level);
             const enrolled = isEnrolled(course.id);
             
+            // Enrollment Filter Logic (Highlight/Dim)
+            const isMatch = filterStatus === 'all' 
+              || (filterStatus === 'enrolled' && enrolled)
+              || (filterStatus === 'not-enrolled' && !enrolled);
+
             return (
               <motion.div 
                 key={course.id} 
                 initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.05 }}
+                animate={{ 
+                  opacity: isMatch ? 1 : 0.35, 
+                  scale: isMatch ? 1 : 0.96,
+                  y: 0 
+                }}
+                transition={{ 
+                  opacity: { duration: 0.4 },
+                  scale: { duration: 0.4 },
+                  delay: idx * 0.05 
+                }}
                 onClick={() => navigate(`/course/${course.id}/detail`)}
-                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden hover:shadow-2xl dark:hover:border-indigo-500 transition-all duration-500 flex flex-col group cursor-pointer shadow-sm shadow-slate-200/50 dark:shadow-none"
+                className={`bg-white dark:bg-slate-900 border rounded-3xl overflow-hidden hover:shadow-2xl transition-all duration-500 flex flex-col group cursor-pointer shadow-sm shadow-slate-200/50 dark:shadow-none ${!isMatch ? 'grayscale-[0.5] filter pointer-events-none' : 'border-slate-200 dark:border-slate-800 dark:hover:border-indigo-500'}`}
               >
                 {/* Image Section */}
                 <div className="relative h-48 overflow-hidden bg-slate-100">

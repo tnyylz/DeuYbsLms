@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Domain/Entities/Course/Lesson.cs
+// Path: DeuYbsLms.Domain/Entities/Course/Lesson.cs
 
 using DeuYbsLms.Domain.Entities.Common;
 
@@ -10,7 +10,9 @@ public class Lesson : BaseEntity
 {
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }
-    public string VideoUrl { get; set; } = string.Empty;
+    public string? VideoUrl { get; set; }
+    public string? TextContent { get; set; }
+    public string? ResourceUrl { get; set; }
     public int DurationInSeconds { get; set; }
     public int OrderIndex { get; set; }   // KİLİT SIRASI — bu alan her şeyi yönetir
     public int XpReward { get; set; } = 50;

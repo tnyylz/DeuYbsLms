@@ -1,7 +1,7 @@
 // Path: src/api/progress.api.ts
 
 import axiosInstance from './axiosInstance';
-import type { CourseProgressDto, QuizResultDto, Result, EnrollmentDto } from '../types';
+import type { CourseProgressDto, QuizResultDto, Result, EnrollmentDto, LessonProgressDto } from '../types';
 
 export const enrollApi = async (courseId: string): Promise<boolean> => {
   const response = await axiosInstance.post(`/Progress/enroll/${courseId}`);
@@ -13,8 +13,9 @@ export const getMyEnrollmentsApi = async (): Promise<EnrollmentDto[]> => {
   return response.data.data ?? response.data;
 };
 
-export const completeVideoApi = async (lessonId: string): Promise<void> => {
-  await axiosInstance.post(`/Progress/complete-video/${lessonId}`);
+export const completeVideoApi = async (lessonId: string): Promise<LessonProgressDto> => {
+  const response = await axiosInstance.post(`/Progress/complete-video/${lessonId}`);
+  return response.data.data ?? response.data;
 };
 
 export const getCourseProgressApi = async (courseId: string): Promise<CourseProgressDto> => {
@@ -28,4 +29,10 @@ export const submitQuizApi = async (
 ): Promise<QuizResultDto> => {
   const response = await axiosInstance.post(`/Progress/submit-quiz`, { lessonId, answers });
   return response.data.data ?? response.data;
-}; 
+};
+
+export const updateVideoProgressApi = async (lessonId: string, second: number): Promise<void> => {
+  await axiosInstance.post(`/Progress/update-video-progress/${lessonId}`, second, {
+    headers: { 'Content-Type': 'application/json' }
+  });
+};

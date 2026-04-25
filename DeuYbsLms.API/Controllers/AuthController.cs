@@ -27,14 +27,12 @@ public class AuthController : ControllerBase
         {
             var result = await _authService.RegisterAsync(request);
             if (!result.IsSuccess)
-                return BadRequest(result.ErrorMessage);
+                return BadRequest(new { errorMessage = result.ErrorMessage });
             return Ok(result.Data);
         }
         catch (Exception ex)
         {
-            // Log the error (could use a logger)
-            Console.WriteLine($"Register Error: {ex}");
-            return StatusCode(500, new { message = "Sunucu tarafında bir hata oluştu.", details = ex.Message, innerException = ex.InnerException?.Message });
+            return StatusCode(500, new { errorMessage = "Sunucu tarafında bir hata oluştu.", details = ex.Message });
         }
     }
 
@@ -43,7 +41,7 @@ public class AuthController : ControllerBase
     {
         var result = await _authService.LoginAsync(request);
         if (!result.IsSuccess)
-            return Unauthorized(result.ErrorMessage);
+            return Unauthorized(new { errorMessage = result.ErrorMessage });
         return Ok(result.Data);
     }
 
@@ -54,7 +52,7 @@ public class AuthController : ControllerBase
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var result = await _authService.GetProfileAsync(userId);
         if (!result.IsSuccess)
-            return NotFound(result.ErrorMessage);
+            return NotFound(new { errorMessage = result.ErrorMessage });
         return Ok(result.Data);
     }
 }

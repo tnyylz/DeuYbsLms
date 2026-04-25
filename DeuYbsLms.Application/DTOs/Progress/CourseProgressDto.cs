@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Application/DTOs/Progress/CourseProgressDto.cs
+// Path: DeuYbsLms.Application/DTOs/Progress/CourseProgressDto.cs
 
 namespace DeuYbsLms.Application.DTOs.Progress;
 

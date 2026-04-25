@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Application/DTOs/Progress/LessonProgressDto.cs
+using DeuYbsLms.Application.DTOs.Gamification;
 
 namespace DeuYbsLms.Application.DTOs.Progress;
 
@@ -13,6 +13,8 @@ public class LessonProgressDto
     public bool IsQuizPassed { get; set; }
     public int QuizAttemptCount { get; set; }
     public double? LastQuizScore { get; set; }
+    public int LastWatchedSecond { get; set; }
+    public XpResultDto? XpResult { get; set; }
     
 
     // Frontend Skill Tree için node durumu

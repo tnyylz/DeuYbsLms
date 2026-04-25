@@ -78,11 +78,27 @@ public class CourseController : ControllerBase
         _mapper.Map(request, course);
         course.UpdatedAt = DateTime.UtcNow;
 
-        // Tags update logic (simplified: clear and re-add)
-        course.Tags.Clear();
-        if (request.Tags != null)
+        // Tags update logic: soft delete missing, resurrect/add new
+        request.Tags ??= new List<string>();
+        var existingTagNames = course.Tags.Where(t => !t.IsDeleted).Select(t => t.Name).ToList();
+
+        // 1. Soft delete missing ones
+        foreach (var tag in course.Tags.Where(t => !t.IsDeleted && !request.Tags.Contains(t.Name)))
         {
-            foreach (var tagName in request.Tags)
+            tag.IsDeleted = true;
+            tag.UpdatedAt = DateTime.UtcNow;
+        }
+
+        // 2. Add or resurrect new ones
+        foreach (var tagName in request.Tags.Where(name => !existingTagNames.Contains(name)))
+        {
+            var deletedTag = course.Tags.FirstOrDefault(t => t.IsDeleted && t.Name == tagName);
+            if (deletedTag != null)
+            {
+                deletedTag.IsDeleted = false;
+                deletedTag.UpdatedAt = DateTime.UtcNow;
+            }
+            else
             {
                 course.Tags.Add(new DeuYbsLms.Domain.Entities.Course.CourseTag { Id = Guid.NewGuid(), Name = tagName, CourseId = course.Id });
             }

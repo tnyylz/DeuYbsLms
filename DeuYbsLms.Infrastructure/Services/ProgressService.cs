@@ -2,6 +2,7 @@
 
 using DeuYbsLms.Application.Common.Results;
 using DeuYbsLms.Application.DTOs.Progress;
+using DeuYbsLms.Application.DTOs.Gamification;
 using DeuYbsLms.Application.Interfaces.Repositories;
 using DeuYbsLms.Application.Interfaces.Services;
 using DeuYbsLms.Domain.Entities.Progress;
@@ -35,12 +36,7 @@ public class ProgressService : IProgressService
             return Result<CourseProgressDto>.Failure("Bu kursa kayıtlı değilsiniz.");
 
         var totalLessons = enrollment.Course.Lessons.Count;
-        var completedLessons = enrollment.LessonProgresses.Count(lp => 
-        {
-            var lesson = enrollment.Course.Lessons.FirstOrDefault(l => l.Id == lp.LessonId);
-            if (lesson == null) return false;
-            return lesson.Quiz == null ? lp.IsVideoCompleted : lp.IsQuizPassed;
-        });
+        var completedLessons = GetCompletedLessonsCount(enrollment.Course.Lessons, enrollment.LessonProgresses);
 
         var lessonDtos = enrollment.Course.Lessons.Select(lesson =>
         {
@@ -56,9 +52,24 @@ public class ProgressService : IProgressService
                 IsVideoCompleted = progress?.IsVideoCompleted ?? false,
                 IsQuizPassed = progress?.IsQuizPassed ?? false,
                 LastQuizScore = progress?.LastQuizScore,
+                LastWatchedSecond = progress?.LastWatchedSecond ?? 0,
                 QuizAttemptCount = progress?.QuizAttemptCount ?? 0
             };
         }).OrderBy(l => l.OrderIndex).ToList();
+
+        var isTrulyCompleted = totalLessons > 0 && completedLessons == totalLessons;
+
+        // DB bayrağını senkronize et (Örn: yeni ders eklenmişse IsCourseCompleted hala true olabilir)
+        if (enrollment.IsCourseCompleted != isTrulyCompleted)
+        {
+            enrollment.IsCourseCompleted = isTrulyCompleted;
+            if (!isTrulyCompleted)
+            {
+                enrollment.CompletedAt = null;
+                enrollment.KanbanStatus = DeuYbsLms.Domain.Enums.KanbanStatus.InProgress;
+            }
+            await _enrollmentRepository.UpdateAsync(enrollment);
+        }
 
         return Result<CourseProgressDto>.Success(new CourseProgressDto
         {
@@ -69,7 +80,7 @@ public class ProgressService : IProgressService
             CompletionPercentage = totalLessons > 0
                 ? Math.Round((double)completedLessons / totalLessons * 100, 1)
                 : 0,
-            IsCompleted = enrollment.IsCourseCompleted,
+            IsCompleted = isTrulyCompleted,
             LessonProgresses = lessonDtos
         });
     }
@@ -89,8 +100,46 @@ public class ProgressService : IProgressService
         var progress = enrollment.LessonProgresses
             .FirstOrDefault(lp => lp.LessonId == lessonId);
 
-        if (progress is null || !progress.IsUnlocked)
-            return Result<LessonProgressDto>.Failure("Bu ders henüz kilitli.");
+        if (progress is null)
+        {
+            var lessonsList = enrollment.Course.Lessons.OrderBy(l => l.OrderIndex).ToList();
+            var currentIndex = lessonsList.FindIndex(l => l.Id == lessonId);
+            
+            bool isUnlocked = false;
+            if (currentIndex == 0) isUnlocked = true;
+            else if (currentIndex > 0)
+            {
+                var prevLesson = lessonsList[currentIndex - 1];
+                var prevProgress = enrollment.LessonProgresses.FirstOrDefault(p => p.LessonId == prevLesson.Id);
+                if (prevProgress != null && prevProgress.IsVideoCompleted)
+                {
+                    if (prevLesson.Quiz == null || prevProgress.IsQuizPassed)
+                        isUnlocked = true;
+                }
+            }
+
+            if (isUnlocked)
+            {
+                progress = new LessonProgress
+                {
+                    Id = Guid.NewGuid(),
+                    EnrollmentId = enrollment.Id,
+                    LessonId = lessonId,
+                    IsUnlocked = true,
+                    CreatedAt = DateTime.UtcNow
+                };
+                await _progressRepository.AddAsync(progress);
+                enrollment.LessonProgresses.Add(progress);
+            }
+            else
+            {
+                return Result<LessonProgressDto>.Failure("Bu ders henüz kilitli. Lütfen önceki dersleri tamamlayın.");
+            }
+        }
+        else if (!progress.IsUnlocked)
+        {
+            return Result<LessonProgressDto>.Failure("Bu ders henüz kilitli. Lütfen önceki dersleri tamamlayın.");
+        }
 
         if (!progress.IsVideoCompleted)
         {
@@ -101,12 +150,24 @@ public class ProgressService : IProgressService
             var lessonWithQuiz = await _lessonRepository.GetLessonWithQuizAsync(lessonId);
             if (lessonWithQuiz?.Quiz == null)
             {
-                await UnlockNextLessonAsync(enrollment, lesson.OrderIndex);
+                await UnlockNextLessonAsync(enrollment, lessonId);
                 await CheckCourseCompletionAsync(enrollment, studentId);
             }
 
             await _progressRepository.UpdateAsync(progress);
-            await _gamificationService.AwardXpAsync(studentId, lesson.XpReward, $"Video tamamlandı: {lesson.Title}");
+            
+            // Kanban Status Güncelleme: İzleniyor
+            if (enrollment.KanbanStatus == DeuYbsLms.Domain.Enums.KanbanStatus.ToDo || enrollment.KanbanStatus == DeuYbsLms.Domain.Enums.KanbanStatus.Recommended)
+            {
+                enrollment.KanbanStatus = DeuYbsLms.Domain.Enums.KanbanStatus.InProgress;
+                await _enrollmentRepository.UpdateAsync(enrollment);
+            }
+
+            var xpResult = await _gamificationService.AwardXpAsync(studentId, lesson.XpReward, $"Video tamamlandı: {lesson.Title}");
+
+            var dto = MapToDto(progress, lesson.Title, lesson.OrderIndex);
+            dto.XpResult = xpResult;
+            return Result<LessonProgressDto>.Success(dto);
         }
 
         return Result<LessonProgressDto>.Success(MapToDto(progress, lesson.Title, lesson.OrderIndex));
@@ -157,7 +218,7 @@ public class ProgressService : IProgressService
 
         Guid? nextLessonId = null;
         bool nextLessonUnlocked = false;
-        int xpEarned = 0;
+        XpResultDto? xpResult = null;
 
         bool justPassed = isPassed && !progress.IsQuizPassed;
 
@@ -166,22 +227,33 @@ public class ProgressService : IProgressService
             progress.IsQuizPassed = true;
             progress.QuizPassedAt = DateTime.UtcNow;
 
-            var nextLesson = await _lessonRepository.GetNextLessonAsync(lesson.CourseId, lesson.OrderIndex);
-            if (nextLesson is not null)
+            var lessonsList = enrollment.Course.Lessons.OrderBy(l => l.OrderIndex).ToList();
+            var currentIndex = lessonsList.FindIndex(l => l.Id == lesson.Id);
+            
+            if (currentIndex >= 0 && currentIndex < lessonsList.Count - 1)
             {
+                var nextLesson = lessonsList[currentIndex + 1];
                 nextLessonId = nextLesson.Id;
                 nextLessonUnlocked = true;
             }
 
-            await UnlockNextLessonAsync(enrollment, lesson.OrderIndex);
+            await UnlockNextLessonAsync(enrollment, lesson.Id);
 
-            xpEarned = await _gamificationService.AwardXpAsync(studentId, lesson.XpReward, $"Quiz geçildi: {lesson.Title}");
+            xpResult = await _gamificationService.AwardXpAsync(studentId, lesson.XpReward, $"Quiz geçildi: {lesson.Title}");
         }
 
         await _progressRepository.UpdateAsync(progress); // önce DB'ye yaz
 
         if (justPassed)
+        {
+            // Kanban Status Güncelleme: İzleniyor
+            if (enrollment.KanbanStatus == DeuYbsLms.Domain.Enums.KanbanStatus.ToDo || enrollment.KanbanStatus == DeuYbsLms.Domain.Enums.KanbanStatus.Recommended)
+            {
+                enrollment.KanbanStatus = DeuYbsLms.Domain.Enums.KanbanStatus.InProgress;
+                await _enrollmentRepository.UpdateAsync(enrollment);
+            }
             await CheckCourseCompletionAsync(enrollment, studentId); // sonra kontrol et
+        }
 
         return Result<QuizResultDto>.Success(new QuizResultDto
         {
@@ -194,7 +266,7 @@ public class ProgressService : IProgressService
             AttemptCount = progress.QuizAttemptCount,
             NextLessonUnlocked = nextLessonUnlocked,
             NextLessonId = nextLessonId,
-            XpEarned = xpEarned,
+            XpResult = xpResult,
             IsCourseCompleted = enrollment.IsCourseCompleted, // ✅ burası güncellendi
             Message = isPassed
          ? "Tebrikler! Quiz'i geçtiniz. 🎉"
@@ -237,14 +309,36 @@ public class ProgressService : IProgressService
         return Result<bool>.Success(true);
     }
 
+    public async Task<Result<bool>> SaveVideoProgressAsync(Guid studentId, Guid lessonId, int second)
+    {
+        var lesson = await _lessonRepository.GetByIdAsync(lessonId);
+        if (lesson == null) return Result<bool>.Failure("Ders bulunamadı.");
+
+        var enrollment = await _enrollmentRepository.GetEnrollmentWithProgressAsync(studentId, lesson.CourseId);
+        if (enrollment == null) return Result<bool>.Failure("Kayıt bulunamadı.");
+
+        var progress = enrollment.LessonProgresses.FirstOrDefault(lp => lp.LessonId == lessonId);
+        if (progress == null) return Result<bool>.Failure("İlerleme kaydı bulunamadı.");
+
+        if (progress.LastWatchedSecond < second)
+        {
+            progress.LastWatchedSecond = second;
+            await _progressRepository.UpdateAsync(progress);
+        }
+
+        return Result<bool>.Success(true);
+    }
+
     // --- Private Yardımcı Metodlar ---
 
-    private async Task UnlockNextLessonAsync(CourseEnrollment enrollment, int currentOrderIndex)
+    private async Task UnlockNextLessonAsync(CourseEnrollment enrollment, Guid currentLessonId)
     {
-        var nextLesson = await _lessonRepository
-            .GetNextLessonAsync(enrollment.CourseId, currentOrderIndex);
+        var lessonsList = enrollment.Course.Lessons.OrderBy(l => l.OrderIndex).ToList();
+        var currentIndex = lessonsList.FindIndex(l => l.Id == currentLessonId);
 
-        if (nextLesson is null) return;
+        if (currentIndex < 0 || currentIndex >= lessonsList.Count - 1) return;
+
+        var nextLesson = lessonsList[currentIndex + 1];
 
         var existingProgress = enrollment.LessonProgresses
             .FirstOrDefault(lp => lp.LessonId == nextLesson.Id);
@@ -271,18 +365,13 @@ public class ProgressService : IProgressService
     {
         var allProgresses = await _progressRepository.GetEnrollmentProgressAsync(enrollment.Id);
         var totalLessons = enrollment.Course.Lessons.Count;
-
-        var completedCount = allProgresses.Count(lp => 
-        {
-            var lesson = enrollment.Course.Lessons.FirstOrDefault(l => l.Id == lp.LessonId);
-            if (lesson == null) return false;
-            return lesson.Quiz == null ? lp.IsVideoCompleted : lp.IsQuizPassed;
-        });
+        var completedCount = GetCompletedLessonsCount(enrollment.Course.Lessons, allProgresses);
 
         if (completedCount == totalLessons && totalLessons > 0)
         {
             enrollment.IsCourseCompleted = true;
             enrollment.CompletedAt = DateTime.UtcNow;
+            enrollment.KanbanStatus = DeuYbsLms.Domain.Enums.KanbanStatus.Done; // Kanban: Bitenler
             await _enrollmentRepository.UpdateAsync(enrollment);
 
             await _gamificationService.AwardXpAsync(studentId, 100, "Kurs tamamlandı!");
@@ -294,24 +383,37 @@ public class ProgressService : IProgressService
     {
         var enrollments = await _enrollmentRepository.GetStudentEnrollmentsAsync(studentId);
 
-        var enrollmentDtos = enrollments.Select(e => new EnrollmentDto
+        var enrollmentDtos = enrollments.Select(e => 
         {
-            EnrollmentId = e.Id,
-            CourseId = e.CourseId,
-            CourseTitle = e.Course.Title,
-            ThumbnailUrl = e.Course.ThumbnailUrl,
-            EnrolledAt = e.EnrolledAt,
-            IsCourseCompleted = e.IsCourseCompleted,
-            CompletedLessonsCount = e.LessonProgresses.Count(lp => 
+            var total = e.Course.Lessons.Count;
+            var completed = GetCompletedLessonsCount(e.Course.Lessons, e.LessonProgresses);
+
+            var isTrulyCompleted = total > 0 && completed == total;
+
+            return new EnrollmentDto
             {
-                var lesson = e.Course.Lessons.FirstOrDefault(l => l.Id == lp.LessonId);
-                if (lesson == null) return false;
-                return lesson.Quiz == null ? lp.IsVideoCompleted : lp.IsQuizPassed;
-            }),
-            TotalLessonsCount = e.Course.Lessons.Count
+                EnrollmentId = e.Id,
+                CourseId = e.CourseId,
+                CourseTitle = e.Course.Title,
+                ThumbnailUrl = e.Course.ThumbnailUrl,
+                EnrolledAt = e.EnrolledAt,
+                IsCourseCompleted = isTrulyCompleted,
+                CompletedLessonsCount = completed,
+                TotalLessonsCount = total
+            };
         }).ToList();
 
         return Result<List<EnrollmentDto>>.Success(enrollmentDtos);
+    }
+
+    private static int GetCompletedLessonsCount(IEnumerable<DeuYbsLms.Domain.Entities.Course.Lesson> lessons, IEnumerable<LessonProgress> progresses)
+    {
+        return lessons.Count(l => 
+        {
+            var progress = progresses.FirstOrDefault(p => p.LessonId == l.Id);
+            if (progress == null) return false;
+            return l.Quiz == null ? progress.IsVideoCompleted : progress.IsQuizPassed;
+        });
     }
 
     private static LessonProgressDto MapToDto(LessonProgress lp, string title, int orderIndex) =>
@@ -324,6 +426,7 @@ public class ProgressService : IProgressService
             IsVideoCompleted = lp.IsVideoCompleted,
             IsQuizPassed = lp.IsQuizPassed,
             LastQuizScore = lp.LastQuizScore,
+            LastWatchedSecond = lp.LastWatchedSecond,
             QuizAttemptCount = lp.QuizAttemptCount
         };
 }

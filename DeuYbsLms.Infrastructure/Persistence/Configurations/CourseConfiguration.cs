@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Infrastructure/Persistence/Configurations/CourseConfiguration.cs
+// Path: DeuYbsLms.Infrastructure/Persistence/Configurations/CourseConfiguration.cs
 
 using DeuYbsLms.Domain.Entities.Course;
 using Microsoft.EntityFrameworkCore;

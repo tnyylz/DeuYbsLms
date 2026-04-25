@@ -11,7 +11,6 @@ namespace DeuYbsLms.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Teacher")]
 public class QuizController : ControllerBase
 {
     private readonly IQuizRepository _quizRepository;
@@ -25,14 +24,31 @@ public class QuizController : ControllerBase
         _mapper = mapper;
     }
 
+    [Authorize(Roles = "Student,Teacher,Admin")]
     [HttpGet("lesson/{lessonId:guid}")]
     public async Task<IActionResult> GetByLesson(Guid lessonId)
     {
         var quiz = await _quizRepository.GetQuizByLessonIdAsync(lessonId);
         if (quiz == null) return NotFound("Bu ders için quiz bulunamadı.");
-        return Ok(quiz);
+        
+        // Map to Teacher-view DTO (Includes IsCorrect)
+        var quizDto = _mapper.Map<QuizDto>(quiz);
+        return Ok(quizDto);
     }
 
+    [Authorize(Roles = "Student,Teacher,Admin")]
+    [HttpGet("lesson/{lessonId:guid}/questions")]
+    public async Task<IActionResult> GetQuestionsByLesson(Guid lessonId)
+    {
+        var quiz = await _quizRepository.GetQuizByLessonIdAsync(lessonId);
+        if (quiz == null) return NotFound("Bu ders için quiz bulunamadı.");
+
+        // Map to Student-view DTOs (Hides IsCorrect)
+        var questions = _mapper.Map<List<StudentQuestionDto>>(quiz.Questions);
+        return Ok(questions);
+    }
+
+    [Authorize(Roles = "Teacher,Admin")]
     [HttpPost]
     public async Task<IActionResult> CreateOrUpdate([FromBody] CreateQuizDto request)
     {
@@ -43,36 +59,32 @@ public class QuizController : ControllerBase
         
         if (existingQuiz != null)
         {
-            // Update existing quiz
-            _mapper.Map(request, existingQuiz);
-            existingQuiz.UpdatedAt = DateTime.UtcNow;
-            await _quizRepository.UpdateAsync(existingQuiz);
-            return Ok(existingQuiz.Id);
+            await _quizRepository.DeleteAsync(existingQuiz);
         }
-        else
-        {
-            // Create new quiz
-            var quiz = _mapper.Map<Quiz>(request);
-            quiz.Id = Guid.NewGuid();
-            quiz.CreatedAt = DateTime.UtcNow;
-            
-            // Generate IDs for questions and options if not present
-            foreach (var q in quiz.Questions)
-            {
-                q.Id = Guid.NewGuid();
-                q.QuizId = quiz.Id;
-                foreach (var o in q.AnswerOptions)
-                {
-                    o.Id = Guid.NewGuid();
-                    o.QuestionId = q.Id;
-                }
-            }
 
-            await _quizRepository.AddAsync(quiz);
-            return Ok(quiz.Id);
+        // Create new quiz
+        var quiz = _mapper.Map<Quiz>(request);
+        quiz.Id = Guid.NewGuid();
+        quiz.CreatedAt = DateTime.UtcNow;
+        
+        foreach (var q in quiz.Questions)
+        {
+            q.Id = Guid.NewGuid();
+            q.QuizId = quiz.Id;
+            q.CreatedAt = DateTime.UtcNow;
+            foreach (var o in q.AnswerOptions)
+            {
+                o.Id = Guid.NewGuid();
+                o.QuestionId = q.Id;
+                o.CreatedAt = DateTime.UtcNow;
+            }
         }
+
+        await _quizRepository.AddAsync(quiz);
+        return Ok(quiz.Id);
     }
 
+    [Authorize(Roles = "Teacher,Admin")]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {

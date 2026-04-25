@@ -23,13 +23,36 @@ public class CertificateService : ICertificateService
         var enrollment = await _context.CourseEnrollments
             .Include(e => e.Student)
             .Include(e => e.Course)
+                .ThenInclude(c => c.Lessons)
+                    .ThenInclude(l => l.Quiz)
+            .Include(e => e.LessonProgresses)
             .FirstOrDefaultAsync(e => e.Id == enrollmentId);
 
         if (enrollment == null)
             return Result<CertificateDto>.Failure("Kayıt bulunamadı.");
 
-        if (!enrollment.IsCourseCompleted)
-            return Result<CertificateDto>.Failure("Kurs henüz tamamlanmamış.");
+        // Gerçek zamanlı kontrol: Yeni ders eklenmişse IsCourseCompleted bayrağı yanıltıcı olabilir.
+        var lessons = enrollment.Course.Lessons;
+        var progresses = enrollment.LessonProgresses;
+        
+        var totalLessons = lessons.Count;
+        var completedLessons = lessons.Count(l => 
+        {
+            var p = progresses.FirstOrDefault(x => x.LessonId == l.Id);
+            if (p == null) return false;
+            return l.Quiz == null ? p.IsVideoCompleted : p.IsQuizPassed;
+        });
+
+        if (totalLessons == 0 || completedLessons < totalLessons)
+        {
+            // Veritabanındaki bayrağı da düzeltelim (opsiyonel ama tutarlılık için iyi olur)
+            if (enrollment.IsCourseCompleted)
+            {
+                enrollment.IsCourseCompleted = false;
+                await _context.SaveChangesAsync();
+            }
+            return Result<CertificateDto>.Failure("Kurs henüz tamamlanmamış veya yeni dersler eklenmiş.");
+        }
 
         var existingCert = await _context.Certificates
             .FirstOrDefaultAsync(c => c.EnrollmentId == enrollmentId);
@@ -98,11 +121,32 @@ public class CertificateService : ICertificateService
                 .ThenInclude(e => e.Student)
             .Include(c => c.Enrollment)
                 .ThenInclude(e => e.Course)
+                    .ThenInclude(c => c.Lessons)
+                        .ThenInclude(l => l.Quiz)
+            .Include(c => c.Enrollment)
+                .ThenInclude(e => e.LessonProgresses)
             .Where(c => c.Enrollment.StudentId == studentId)
             .OrderByDescending(c => c.IssuedAt)
             .ToListAsync();
 
-        var dtos = certificates.Select(c => new CertificateDto
+        // Eğer kursa yeni ders eklenmişse ve öğrenci bitirmemişse sertifikayı gizle
+        var validCertificates = certificates.Where(c => 
+        {
+            var e = c.Enrollment;
+            var lessons = e.Course.Lessons;
+            var progresses = e.LessonProgresses;
+            
+            var total = lessons.Count;
+            var completed = lessons.Count(l => 
+            {
+                var p = progresses.FirstOrDefault(x => x.LessonId == l.Id);
+                if (p == null) return false;
+                return l.Quiz == null ? p.IsVideoCompleted : p.IsQuizPassed;
+            });
+            return total > 0 && completed >= total;
+        }).ToList();
+
+        var dtos = validCertificates.Select(c => new CertificateDto
         {
             Id = c.Id,
             StudentName = c.Enrollment.Student.FullName,

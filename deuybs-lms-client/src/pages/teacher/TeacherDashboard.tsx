@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, Users, BarChart2, PlusCircle, LogOut, ChevronRight, LayoutDashboard, Settings } from 'lucide-react';
+import { BookOpen, Users, BarChart2, PlusCircle, LogOut, ChevronRight, LayoutDashboard, Settings, Layers } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { getTeacherDashboardApi } from '../../api/teacher.api';
 import { getFileUrl } from '../../utils/fileUtils';
 import type { TeacherDashboardDto } from '../../types';
 import { motion } from 'framer-motion';
 import ThemeToggle from '../../components/shared/ThemeToggle';
+import NotificationCenter from '../../components/shared/NotificationCenter';
 
 export default function TeacherDashboard() {
   const { user, logout } = useAuthStore();
@@ -60,6 +61,12 @@ export default function TeacherDashboard() {
             <Link to="/teacher/analytics" className="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all text-sm font-semibold flex items-center gap-2 group">
               <BarChart2 size={16} className="group-hover:text-indigo-600 transition-colors" /> Analitik
             </Link>
+            <div className="h-4 w-px bg-slate-200 dark:bg-slate-700" />
+            <Link to="/teacher/learning-paths" className="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all text-sm font-semibold flex items-center gap-2 group">
+              <Layers size={16} className="group-hover:text-indigo-600 transition-colors" /> Yol Haritaları
+            </Link>
+            <div className="h-4 w-px bg-slate-200 dark:bg-slate-700" />
+            <NotificationCenter />
             <div className="h-4 w-px bg-slate-200 dark:bg-slate-700" />
             <ThemeToggle />
             <div className="h-4 w-px bg-slate-200 dark:bg-slate-700" />
@@ -183,10 +190,10 @@ export default function TeacherDashboard() {
                       
                       <div className="flex gap-2">
                         <Link 
-                          to={`/teacher/course-builder/${course.id}`} 
+                          to={`/teacher/course/${course.id}`} 
                           className="flex-1 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 transition-all py-3 rounded-xl text-xs font-black flex items-center justify-center gap-2 group/btn"
                         >
-                          <Settings size={14} className="group-hover/btn:rotate-90 transition-transform" /> DÜZENLE
+                          <Settings size={14} className="group-hover/btn:rotate-90 transition-transform" /> YÖNET
                         </Link>
                         <Link 
                           to={`/teacher/analytics/${course.id}`} 

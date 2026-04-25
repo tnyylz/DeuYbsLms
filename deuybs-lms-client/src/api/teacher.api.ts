@@ -27,6 +27,15 @@ export const uploadThumbnailApi = async (file: File): Promise<string> => {
   return res.data.url;
 };
 
+export const uploadDocumentApi = async (file: File): Promise<string> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await axiosInstance.post('/Upload?folder=documents', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+  return res.data.url;
+};
+
 export const createLessonApi = async (data: CreateLessonRequest): Promise<string> => {
   const res = await axiosInstance.post('/Lesson', data);
   return res.data;
@@ -48,3 +57,38 @@ export const createOrUpdateQuizApi = async (data: CreateQuizRequest): Promise<st
   const res = await axiosInstance.post('/Quiz', data);
   return res.data;
 };
+
+export const getQuizByLessonApi = async (lessonId: string): Promise<CreateQuizRequest | null> => {
+  try {
+    const res = await axiosInstance.get(`/Quiz/lesson/${lessonId}`);
+    return res.data;
+  } catch (error: any) {
+    if (error.response?.status === 404) return null;
+    throw error;
+  }
+};
+
+export const uploadVideoToYouTubeApi = async (
+  file: File, 
+  title: string, 
+  description: string,
+  onProgress?: (percent: number) => void
+): Promise<{ videoId: string, videoUrl: string }> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('title', title);
+  formData.append('description', description);
+
+  const res = await axiosInstance.post('/YouTube/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: (progressEvent) => {
+      if (progressEvent.total && onProgress) {
+        const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        onProgress(percent);
+      }
+    }
+  });
+
+  return res.data;
+};
+

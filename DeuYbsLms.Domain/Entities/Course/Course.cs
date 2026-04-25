@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Domain/Entities/Course/Course.cs
+// Path: DeuYbsLms.Domain/Entities/Course/Course.cs
 
 using DeuYbsLms.Domain.Entities.Common;
 using DeuYbsLms.Domain.Entities.Identity;

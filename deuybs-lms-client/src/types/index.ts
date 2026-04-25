@@ -32,7 +32,7 @@ export interface UserInfo {
   userId: string;
   email: string;
   fullName: string;
-  role: 'Student' | 'Teacher';
+  role: 'Student' | 'Teacher' | 'Admin';
 }
 
 // ===== COURSE =====
@@ -60,13 +60,40 @@ export interface CourseDetailDto {
   teacherName: string;
   lessons: LessonDto[];
   tags: string[];
+  isPublished: boolean;
+}
+
+// ===== LEARNING PATH =====
+export interface LearningPathDto {
+  id: string;
+  title: string;
+  description: string;
+  thumbnailUrl?: string;
+  difficulty: string;
+  totalCourses: number;
+  completedCoursesCount: number;
+  progressPercentage: number;
+  isPublished: boolean;
+  courses: LearningPathCourseDto[];
+}
+
+export interface LearningPathCourseDto {
+  courseId: string;
+  courseTitle: string;
+  thumbnailUrl?: string;
+  orderIndex: number;
+  status: 'Locked' | 'Available' | 'Completed';
+  progressPercentage: number;
 }
 
 export interface LessonDto {
   id: string;
   title: string;
+  description?: string;
   orderIndex: number;
-  videoUrl: string;
+  videoUrl?: string;
+  textContent?: string;
+  resourceUrl?: string;
   durationInSeconds: number;
   xpReward: number;
   hasQuiz: boolean;
@@ -104,7 +131,9 @@ export interface LessonProgressDto {
   isVideoCompleted: boolean;
   isQuizPassed: boolean;
   lastQuizScore?: number;
+  lastWatchedSecond: number;
   quizAttemptCount: number;
+  xpResult?: XpResultDto;
 }
 
 export interface QuizResultDto {
@@ -117,7 +146,7 @@ export interface QuizResultDto {
   attemptCount: number;
   nextLessonUnlocked: boolean;
   nextLessonId?: string;
-  xpEarned: number;
+  xpResult?: XpResultDto;
   message: string;
   isCourseCompleted?: boolean;
   earnedBadge?: string | null;
@@ -134,7 +163,45 @@ export interface AnswerOptionDto {
   optionText: string;
 }
 
-// ===== GAMIFICATION =====
+// ===== GAMIFICATION, LEAGUES & CHALLENGES =====
+export interface ChallengeDto {
+  id: string;
+  title: string;
+  description: string;
+  type: number; // 1: XpGain, 2: LessonCompletion, 3: QuizSuccess
+  targetValue: number;
+  xpReward: number;
+  expiryDate?: string;
+  currentValue: number;
+  isCompleted: boolean;
+  progressPercent: number;
+}
+
+export interface LeagueDto {
+  id: string;
+  tier: string;
+  seasonNumber: number;
+  endDate: string;
+  isClosed: boolean;
+}
+
+export interface LeagueParticipationDto {
+  studentId: string;
+  fullName: string;
+  profilePictureUrl?: string;
+  points: number;
+  rank: number;
+  isPromotionZone: boolean;
+  isRelegationZone: boolean;
+}
+
+export interface LeagueLeaderboardDto {
+  tier: string;
+  seasonNumber: number;
+  endDate: string;
+  rankings: LeagueParticipationDto[];
+}
+
 export interface StudentGamificationDto {
   totalXp: number;
   currentLevel: number;
@@ -146,6 +213,21 @@ export interface StudentGamificationDto {
   xpMultiplier: number;
   badges: BadgeDto[];
   recentXpTransactions: XpTransactionDto[];
+  currentLeagueTier: string;
+  leagueRank?: number | null;
+  currentTitle?: string | null;
+  profileFrameColor?: string | null;
+  activeChallenges: ChallengeDto[];
+}
+
+export interface BadgeDto {
+  badgeType: string;
+  displayName: string;
+  description: string;
+  iconEmoji: string;
+  level: number;
+  earnedAt: string;
+  contextDescription?: string;
 }
 
 export interface XpTransactionDto {
@@ -163,12 +245,31 @@ export interface LeaderboardDto {
   level: number;
 }
 
-export interface BadgeDto {
-  badgeType: string;
-  displayName: string;
+// ===== SHOP =====
+export interface ShopItem {
+  id: string;
+  name: string;
   description: string;
+  priceXp: number;
+  type: string;
   iconEmoji: string;
-  earnedAt: string;
+  metadata?: string;
+}
+
+export interface UserInventoryItem {
+  id: string;
+  shopItemId: string;
+  itemName: string;
+  itemType: string;
+  iconEmoji: string;
+  isUsed: boolean;
+  purchasedAt: string;
+}
+
+export interface PurchaseResult {
+  success: boolean;
+  message: string;
+  newTotalXp: number;
 }
 
 // ===== TEACHER =====
@@ -232,6 +333,7 @@ export interface CreateCourseRequest {
   title: string;
   description: string;
   level: string;
+  totalXpReward: number;
   thumbnailUrl?: string;
   isPublished?: boolean;
   tags?: string[];
@@ -239,7 +341,10 @@ export interface CreateCourseRequest {
 
 export interface CreateLessonRequest {
   title: string;
-  videoUrl: string;
+  description?: string;
+  videoUrl?: string;
+  textContent?: string;
+  resourceUrl?: string;
   durationInSeconds: number;
   xpReward: number;
   orderIndex: number;
@@ -269,4 +374,23 @@ export interface CertificateDto {
   uniqueVerificationCode: string;
   issuedAt: string;
   pdfStoragePath?: string;
+}
+
+export interface XpResultDto {
+  xpAwarded: number;
+  newTotalXp: number;
+  currentLevel: number;
+  didLevelUp: boolean;
+  newLevel?: number;
+}
+
+// ===== NOTIFICATION =====
+export interface NotificationDto {
+  id: string;
+  title: string;
+  message: string;
+  type: 'System' | 'Achievement' | 'Challenge' | 'LevelUp' | 'CourseUpdate' | 'LeagueUpdate';
+  isRead: boolean;
+  actionUrl?: string;
+  createdAt: string;
 }

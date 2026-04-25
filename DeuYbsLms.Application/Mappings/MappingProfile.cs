@@ -47,10 +47,21 @@ public class MappingProfile : Profile
         // CreateLessonDto → Lesson
         CreateMap<CreateLessonDto, Lesson>();
 
-        // CreateQuizDto → Quiz
         CreateMap<CreateQuizDto, Quiz>();
-        CreateMap<CreateQuestionDto, Question>();
+        CreateMap<CreateQuestionDto, Question>()
+            .ForMember(dest => dest.AnswerOptions, opt => opt.MapFrom(src => src.Options));
         CreateMap<CreateAnswerOptionDto, AnswerOption>();
+
+        // Quiz → Teacher View Mappings (Includes IsCorrect)
+        CreateMap<Quiz, QuizDto>();
+        CreateMap<Question, TeacherQuestionDto>()
+            .ForMember(dest => dest.Options, opt => opt.MapFrom(src => src.AnswerOptions));
+        CreateMap<AnswerOption, TeacherAnswerOptionDto>();
+
+        // Quiz → Student View Mappings (Hides IsCorrect)
+        CreateMap<Question, StudentQuestionDto>()
+            .ForMember(dest => dest.Options, opt => opt.MapFrom(src => src.AnswerOptions));
+        CreateMap<AnswerOption, StudentAnswerOptionDto>();
 
         // LessonProgress → LessonProgressDto
         CreateMap<LessonProgress, LessonProgressDto>()
@@ -78,6 +89,24 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.DisplayName, opt => opt.MapFrom(src => GetBadgeDisplayName(src.BadgeType)))
             .ForMember(dest => dest.Description, opt => opt.MapFrom(src => GetBadgeDescription(src.BadgeType)))
             .ForMember(dest => dest.IconEmoji, opt => opt.MapFrom(src => GetBadgeEmoji(src.BadgeType)));
+
+        // ShopItem → ShopItemDto
+        CreateMap<ShopItem, ShopItemDto>()
+            .ForMember(dest => dest.Type, opt => opt.MapFrom(src => src.Type.ToString()));
+
+        // UserInventoryItem → UserInventoryItemDto
+        CreateMap<UserInventoryItem, UserInventoryItemDto>()
+            .ForMember(dest => dest.ItemName, opt => opt.MapFrom(src => src.ShopItem.Name))
+            .ForMember(dest => dest.ItemType, opt => opt.MapFrom(src => src.ShopItem.Type.ToString()))
+            .ForMember(dest => dest.IconEmoji, opt => opt.MapFrom(src => src.ShopItem.IconEmoji));
+
+        // LearningPath mappings
+        CreateMap<LearningPath, LearningPathDto>()
+            .ForMember(dest => dest.TotalCourses, opt => opt.MapFrom(src => src.Courses.Count));
+
+        CreateMap<LearningPathCourse, LearningPathCourseDto>()
+            .ForMember(dest => dest.CourseTitle, opt => opt.MapFrom(src => src.Course.Title))
+            .ForMember(dest => dest.ThumbnailUrl, opt => opt.MapFrom(src => src.Course.ThumbnailUrl));
     }
 
     private static string GetBadgeDisplayName(BadgeType type) => type switch

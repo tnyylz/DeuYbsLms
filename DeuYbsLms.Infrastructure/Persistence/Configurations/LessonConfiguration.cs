@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Infrastructure/Persistence/Configurations/LessonConfiguration.cs
+// Path: DeuYbsLms.Infrastructure/Persistence/Configurations/LessonConfiguration.cs
 
 using DeuYbsLms.Domain.Entities.Course;
 using Microsoft.EntityFrameworkCore;
@@ -17,7 +17,7 @@ public class LessonConfiguration : IEntityTypeConfiguration<Lesson>
             .HasMaxLength(200);
 
         builder.Property(l => l.VideoUrl)
-            .IsRequired();
+            .IsRequired(false);
 
         // OrderIndex + CourseId kombinasyonu unique olmalı
         // Aynı kursta 2 ders aynı sıraya sahip olamaz

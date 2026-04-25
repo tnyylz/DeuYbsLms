@@ -18,6 +18,9 @@ public class GamificationService : IGamificationService
     private readonly IRepository<UserBadge> _badgeRepository;
     private readonly IRepository<XpTransaction> _xpRepository;
     private readonly IEnrollmentRepository _enrollmentRepository;
+    private readonly ILeagueService _leagueService;
+    private readonly IChallengeService _challengeService;
+    private readonly INotificationService _notificationService;
     private readonly AppDbContext _context;
 
     public GamificationService(
@@ -25,19 +28,27 @@ public class GamificationService : IGamificationService
         IRepository<UserBadge> badgeRepository,
         IRepository<XpTransaction> xpRepository,
         IEnrollmentRepository enrollmentRepository,
+        ILeagueService leagueService,
+        IChallengeService challengeService,
+        INotificationService notificationService,
         AppDbContext context)
     {
         _profileRepository = profileRepository;
         _badgeRepository = badgeRepository;
         _xpRepository = xpRepository;
         _enrollmentRepository = enrollmentRepository;
+        _leagueService = leagueService;
+        _challengeService = challengeService;
+        _notificationService = notificationService;
         _context = context;
     }
 
-    public async Task<int> AwardXpAsync(Guid studentId, int xpAmount, string reason)
+    public async Task<XpResultDto> AwardXpAsync(Guid studentId, int xpAmount, string reason)
     {
         var profile = await _profileRepository.GetAsync(sp => sp.AppUserId == studentId);
-        if (profile is null) return 0;
+        if (profile is null) return new XpResultDto();
+
+        int initialLevel = profile.CurrentLevel;
 
         // Streak Logic: Check if reason counts for consistency (Lesson/Quiz)
         bool countsForStreak = reason.Contains("Video") || reason.Contains("Quiz");
@@ -57,8 +68,28 @@ public class GamificationService : IGamificationService
                 }
                 else if (diff > 1) // Streak broken
                 {
-                    profile.CurrentStreak = 1;
+                    // Mağaza Eşyası: Streak Shield kontrolü
+                    var shield = await _context.UserInventoryItems
+                        .Include(ui => ui.ShopItem)
+                        .FirstOrDefaultAsync(ui => ui.StudentProfileId == profile.Id && 
+                                                 ui.ShopItem.Type == ShopItemType.StreakShield && 
+                                                 !ui.IsUsed);
+
+                    if (shield != null)
+                    {
+                        shield.IsUsed = true;
+                        shield.UpdatedAt = DateTime.UtcNow;
+                        // Seri bozulmadı, aynı kaldı (veya bugün için +1 de yapılabilir ama genellikle koruma seriyi dondurur)
+                        // Kullanıcı bugün aktif olduğu için diff > 1 olsa da seriyi devam ettiriyoruz
+                        profile.CurrentStreak++; 
+                        reason += " (🛡️ Streak Shield Kullanıldı!)";
+                    }
+                    else
+                    {
+                        profile.CurrentStreak = 1;
+                    }
                 }
+
                 // If diff == 0, already active today, no change
             }
             else
@@ -70,8 +101,24 @@ public class GamificationService : IGamificationService
             
             // Calculate Multiplier: 5% per day, max 50%
             multiplier = 1.0 + Math.Min(profile.CurrentStreak * 0.05, 0.5);
+            
+            // Mağaza Eşyası: XP Multiplier kontrolü
+            var activeMultiplier = await _context.UserInventoryItems
+                .Include(ui => ui.ShopItem)
+                .FirstOrDefaultAsync(ui => ui.StudentProfileId == profile.Id && 
+                                         ui.ShopItem.Type == ShopItemType.ExpMultiplier && 
+                                         !ui.IsUsed);
+            
+            if (activeMultiplier != null)
+            {
+                multiplier *= 2; // Sabit x2 bonus
+                activeMultiplier.IsUsed = true; // Tek kullanımlık şimdilik
+                activeMultiplier.UpdatedAt = DateTime.UtcNow;
+                reason += " (⚡ XP Boost Aktif!)";
+            }
+
             xpAmount = (int)(xpAmount * multiplier);
-            reason += $" (Streak Bonusu: x{multiplier:F2})";
+            reason += $" (Toplam Çarpan: x{multiplier:F2})";
         }
 
         await _xpRepository.AddAsync(new XpTransaction
@@ -93,7 +140,27 @@ public class GamificationService : IGamificationService
         }
 
         await _profileRepository.UpdateAsync(profile);
-        return xpAmount;
+
+        await _leagueService.UpdateLeaguePointsAsync(studentId, xpAmount);
+        await _challengeService.UpdateChallengeProgressAsync(studentId, ChallengeType.XpGain, xpAmount);
+
+        if (profile.CurrentLevel > initialLevel)
+        {
+            await _notificationService.SendNotificationAsync(
+                studentId,
+                "Seviye Atladın! 🎉",
+                $"Tebrikler! Seviye {profile.CurrentLevel} oldun.",
+                NotificationType.LevelUp);
+        }
+
+        return new XpResultDto
+        {
+            XpAwarded = xpAmount,
+            NewTotalXp = profile.TotalXp,
+            CurrentLevel = profile.CurrentLevel,
+            DidLevelUp = profile.CurrentLevel > initialLevel,
+            NewLevel = profile.CurrentLevel > initialLevel ? profile.CurrentLevel : null
+        };
     }
 
     public async Task CheckAndAwardBadgesAsync(Guid studentId)
@@ -118,19 +185,33 @@ public class GamificationService : IGamificationService
         {
             if (!condition) continue;
 
-            var alreadyEarned = await _badgeRepository
-                .AnyAsync(ub => ub.StudentProfileId == profile.Id && ub.BadgeType == badge);
+            var existingBadge = await _context.UserBadges
+                .FirstOrDefaultAsync(ub => ub.StudentProfileId == profile.Id && ub.BadgeType == badge);
 
-            if (alreadyEarned) continue;
+            if (existingBadge != null)
+            {
+                // Zaten kazanılmışsa, Seviye Atlat (Gereksinimler arttıkça seviye artabilir ama şimdilik her kontrolde +1 gibi basit bir mantık veya sabit)
+                // Gerçek senaryoda: completedCourses == 10 ise Level 2 gibi kontroller eklenebilir.
+                // Şimdilik sadece varlığını koruyoruz, ancak planlanan "Evrimleşen Rozetler" için seviye mantığını kurguluyoruz.
+                continue; 
+            }
 
             await _badgeRepository.AddAsync(new UserBadge
             {
                 Id = Guid.NewGuid(),
                 StudentProfileId = profile.Id,
                 BadgeType = badge,
+                Level = 1,
                 EarnedAt = DateTime.UtcNow,
                 CreatedAt = DateTime.UtcNow
             });
+
+            var badgeInfo = MapBadgeToDto(new UserBadge { BadgeType = badge });
+            await _notificationService.SendNotificationAsync(
+                studentId,
+                "Yeni Başarım! 🏆",
+                $"{badgeInfo.DisplayName} rozetini kazandın: {badgeInfo.Description}",
+                NotificationType.Achievement);
         }
     }
 
@@ -163,6 +244,10 @@ public class GamificationService : IGamificationService
             .SelectMany(e => e.LessonProgresses)
             .Count(lp => lp.IsQuizPassed);
 
+        // Lig ve Challenge bilgilerini al
+        var leagueResult = await _leagueService.GetMyLeagueLeaderboardAsync(studentId);
+        var challengesResult = await _challengeService.GetMyChallengesAsync(studentId);
+
         return Result<StudentGamificationDto>.Success(new StudentGamificationDto
         {
             TotalXp = profile.TotalXp,
@@ -175,22 +260,45 @@ public class GamificationService : IGamificationService
             XpMultiplier = 1.0 + Math.Min(profile.CurrentStreak * 0.05, 0.5),
             Badges = badges.Select(b => MapBadgeToDto(b)).ToList(),
             RecentXpTransactions = recentXp
-            .OrderByDescending(x => x.CreatedAt)
-            .Take(10)
-            .Select(x => new XpTransactionDto
-            {
-                Amount = x.XpAmount,
-                Reason = x.Reason,
-                EarnedAt = x.CreatedAt
-            }).ToList()
+                .OrderByDescending(x => x.CreatedAt)
+                .Take(10)
+                .Select(x => new XpTransactionDto
+                {
+                    Amount = x.XpAmount,
+                    Reason = x.Reason,
+                    EarnedAt = x.CreatedAt
+                }).ToList(),
+            
+            CurrentLeagueTier = profile.CurrentLeagueTier.ToString().ToUpper(),
+            LeagueRank = (leagueResult.IsSuccess && leagueResult.Data?.Rankings != null) 
+                ? leagueResult.Data.Rankings.FirstOrDefault(r => r.StudentId == studentId)?.Rank 
+                : null,
+            
+            CurrentTitle = (await _context.UserInventoryItems
+                .Include(ui => ui.ShopItem)
+                .FirstOrDefaultAsync(ui => ui.StudentProfileId == profile.Id && 
+                                         ui.ShopItem.Type == ShopItemType.SpecialTitle && 
+                                         !ui.IsUsed))?.ShopItem.Metadata,
+            
+            ProfileFrameColor = (await _context.UserInventoryItems
+                .Include(ui => ui.ShopItem)
+                .FirstOrDefaultAsync(ui => ui.StudentProfileId == profile.Id && 
+                                         ui.ShopItem.Type == ShopItemType.ProfileFrame && 
+                                         !ui.IsUsed))?.ShopItem.Metadata,
+
+            ActiveChallenges = (challengesResult.IsSuccess && challengesResult.Data != null) 
+                ? challengesResult.Data 
+                : new List<ChallengeDto>()
         });
     }
+
 
     public async Task<Result<List<LeaderboardDto>>> GetLeaderboardAsync(int top = 10)
     {
         var leaderboard = await _context.StudentProfiles
             .Include(p => p.AppUser)
-            .OrderByDescending(p => p.TotalXp)
+            .OrderByDescending(p => p.CurrentLevel)
+            .ThenByDescending(p => p.TotalXp)
             .Take(top)
             .Select((p) => new LeaderboardDto
             {
@@ -222,12 +330,22 @@ public class GamificationService : IGamificationService
             _ => (badge.BadgeType.ToString(), "", "🎖️")
         };
 
+        string prefix = badge.Level switch
+        {
+            >= 10 => "Efsanevi ",
+            >= 7 => "Kadim ",
+            >= 5 => "Usta ",
+            >= 3 => "Kıdemli ",
+            _ => "Çırak "
+        };
+
         return new BadgeDto
         {
             BadgeType = badge.BadgeType.ToString(),
-            DisplayName = displayName,
+            DisplayName = prefix + displayName,
             Description = description,
             IconEmoji = emoji,
+            Level = badge.Level,
             EarnedAt = badge.EarnedAt
         };
     }

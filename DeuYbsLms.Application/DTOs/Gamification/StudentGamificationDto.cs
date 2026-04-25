@@ -14,6 +14,13 @@ public class StudentGamificationDto
     public double XpMultiplier { get; set; }
     public List<BadgeDto> Badges { get; set; } = new();
     public List<XpTransactionDto> RecentXpTransactions { get; set; } = new();
+
+    // New Features
+    public string CurrentLeagueTier { get; set; } = string.Empty;
+    public int? LeagueRank { get; set; }
+    public string? CurrentTitle { get; set; }
+    public string? ProfileFrameColor { get; set; }
+    public List<ChallengeDto> ActiveChallenges { get; set; } = new();
 }
 
 

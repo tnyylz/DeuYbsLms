@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Application/DTOs/Course/CreateQuizDto.cs
+// Path: DeuYbsLms.Application/DTOs/Course/CreateQuizDto.cs
 
 namespace DeuYbsLms.Application.DTOs.Course;
 
@@ -14,7 +14,7 @@ public class CreateQuestionDto
 {
     public string QuestionText { get; set; } = string.Empty;
     public int OrderIndex { get; set; }
-    public List<CreateAnswerOptionDto> AnswerOptions { get; set; } = new();
+    public List<CreateAnswerOptionDto> Options { get; set; } = new();
 }
 
 public class CreateAnswerOptionDto

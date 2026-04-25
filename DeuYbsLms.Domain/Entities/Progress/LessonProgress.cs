@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Domain/Entities/Progress/LessonProgress.cs
+// Path: DeuYbsLms.Domain/Entities/Progress/LessonProgress.cs
 
 using DeuYbsLms.Domain.Entities.Common;
 using DeuYbsLms.Domain.Entities.Course;
@@ -21,6 +21,7 @@ public class LessonProgress : BaseEntity
     public int QuizAttemptCount { get; set; } = 0;       // 3+ olursa Early Warning Radar'da kırmızı
     public double? LastQuizScore { get; set; }              // 0-100 arası yüzde
     public bool IsQuizPassed { get; set; } = false;      // LastQuizScore >= MinimumPassingScore ise true
+    public int LastWatchedSecond { get; set; } = 0;      // Öğrencinin videoda kaldığı son saniye
     public DateTime? VideoCompletedAt { get; set; }
     public DateTime? QuizPassedAt { get; set; }
 }

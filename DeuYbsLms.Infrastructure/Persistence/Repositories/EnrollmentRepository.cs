@@ -25,6 +25,7 @@ public class EnrollmentRepository : Repository<CourseEnrollment>, IEnrollmentRep
         => await _context.CourseEnrollments
             .Include(e => e.Course)
                 .ThenInclude(c => c.Lessons)
+                    .ThenInclude(l => l.Quiz)
             .Include(e => e.LessonProgresses)
             .Where(e => e.StudentId == studentId)
             .OrderByDescending(e => e.EnrolledAt)

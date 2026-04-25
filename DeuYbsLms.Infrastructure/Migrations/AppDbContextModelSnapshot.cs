@@ -22,6 +22,81 @@ namespace DeuYbsLms.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("DeuYbsLms.Domain.Entities.Common.Notification", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ActionUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Notifications");
+                });
+
+            modelBuilder.Entity("DeuYbsLms.Domain.Entities.Common.SystemAnnouncement", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TargetRole")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("SystemAnnouncements");
+                });
+
             modelBuilder.Entity("DeuYbsLms.Domain.Entities.Course.AnswerOption", b =>
                 {
                     b.Property<Guid>("Id")
@@ -133,6 +208,86 @@ namespace DeuYbsLms.Infrastructure.Migrations
                     b.ToTable("CourseTags");
                 });
 
+            modelBuilder.Entity("DeuYbsLms.Domain.Entities.Course.LearningPath", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Difficulty")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPublished")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid?>("TeacherId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ThumbnailUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TeacherId");
+
+                    b.ToTable("LearningPaths");
+                });
+
+            modelBuilder.Entity("DeuYbsLms.Domain.Entities.Course.LearningPathCourse", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CourseId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("LearningPathId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("OrderIndex")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("LearningPathId", "CourseId")
+                        .IsUnique();
+
+                    b.ToTable("LearningPathCourses");
+                });
+
             modelBuilder.Entity("DeuYbsLms.Domain.Entities.Course.Lesson", b =>
                 {
                     b.Property<Guid>("Id")
@@ -157,6 +312,12 @@ namespace DeuYbsLms.Infrastructure.Migrations
                     b.Property<int>("OrderIndex")
                         .HasColumnType("int");
 
+                    b.Property<string>("ResourceUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("TextContent")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -166,7 +327,6 @@ namespace DeuYbsLms.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("VideoUrl")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("XpReward")
@@ -249,6 +409,166 @@ namespace DeuYbsLms.Infrastructure.Migrations
                     b.ToTable("Quizzes");
                 });
 
+            modelBuilder.Entity("DeuYbsLms.Domain.Entities.Gamification.Challenge", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ExpiryDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("TargetValue")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("XpReward")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Challenges");
+                });
+
+            modelBuilder.Entity("DeuYbsLms.Domain.Entities.Gamification.LeagueGroup", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsClosed")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("SeasonNumber")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Tier")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LeagueGroups");
+                });
+
+            modelBuilder.Entity("DeuYbsLms.Domain.Entities.Gamification.LeagueParticipation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("FinalRank")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("LeagueGroupId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("SeasonPoints")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("StudentProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LeagueGroupId");
+
+                    b.HasIndex("StudentProfileId");
+
+                    b.ToTable("LeagueParticipations");
+                });
+
+            modelBuilder.Entity("DeuYbsLms.Domain.Entities.Gamification.ShopItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("IconEmoji")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ImageUrl")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("PriceXp")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ShopItems");
+                });
+
             modelBuilder.Entity("DeuYbsLms.Domain.Entities.Gamification.UserBadge", b =>
                 {
                     b.Property<Guid>("Id")
@@ -270,6 +590,9 @@ namespace DeuYbsLms.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<int>("Level")
+                        .HasColumnType("int");
+
                     b.Property<Guid>("StudentProfileId")
                         .HasColumnType("uniqueidentifier");
 
@@ -282,6 +605,81 @@ namespace DeuYbsLms.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("UserBadges");
+                });
+
+            modelBuilder.Entity("DeuYbsLms.Domain.Entities.Gamification.UserChallengeProgress", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ChallengeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CurrentValue")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("StudentProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChallengeId");
+
+                    b.HasIndex("StudentProfileId");
+
+                    b.ToTable("UserChallengeProgresses");
+                });
+
+            modelBuilder.Entity("DeuYbsLms.Domain.Entities.Gamification.UserInventoryItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsUsed")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("PurchasedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ShopItemId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("StudentProfileId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ShopItemId");
+
+                    b.HasIndex("StudentProfileId");
+
+                    b.ToTable("UserInventoryItems");
                 });
 
             modelBuilder.Entity("DeuYbsLms.Domain.Entities.Gamification.XpTransaction", b =>
@@ -382,6 +780,9 @@ namespace DeuYbsLms.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int>("CurrentLeagueTier")
+                        .HasColumnType("int");
 
                     b.Property<int>("CurrentLevel")
                         .ValueGeneratedOnAdd()
@@ -490,6 +891,9 @@ namespace DeuYbsLms.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<int>("KanbanStatus")
+                        .HasColumnType("int");
+
                     b.Property<Guid>("StudentId")
                         .HasColumnType("uniqueidentifier");
 
@@ -538,6 +942,9 @@ namespace DeuYbsLms.Infrastructure.Migrations
 
                     b.Property<double?>("LastQuizScore")
                         .HasColumnType("float");
+
+                    b.Property<int>("LastWatchedSecond")
+                        .HasColumnType("int");
 
                     b.Property<Guid>("LessonId")
                         .HasColumnType("uniqueidentifier");
@@ -599,6 +1006,34 @@ namespace DeuYbsLms.Infrastructure.Migrations
                     b.Navigation("Course");
                 });
 
+            modelBuilder.Entity("DeuYbsLms.Domain.Entities.Course.LearningPath", b =>
+                {
+                    b.HasOne("DeuYbsLms.Domain.Entities.Identity.AppUser", "Teacher")
+                        .WithMany()
+                        .HasForeignKey("TeacherId");
+
+                    b.Navigation("Teacher");
+                });
+
+            modelBuilder.Entity("DeuYbsLms.Domain.Entities.Course.LearningPathCourse", b =>
+                {
+                    b.HasOne("DeuYbsLms.Domain.Entities.Course.Course", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DeuYbsLms.Domain.Entities.Course.LearningPath", "LearningPath")
+                        .WithMany("Courses")
+                        .HasForeignKey("LearningPathId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("LearningPath");
+                });
+
             modelBuilder.Entity("DeuYbsLms.Domain.Entities.Course.Lesson", b =>
                 {
                     b.HasOne("DeuYbsLms.Domain.Entities.Course.Course", "Course")
@@ -632,6 +1067,25 @@ namespace DeuYbsLms.Infrastructure.Migrations
                     b.Navigation("Lesson");
                 });
 
+            modelBuilder.Entity("DeuYbsLms.Domain.Entities.Gamification.LeagueParticipation", b =>
+                {
+                    b.HasOne("DeuYbsLms.Domain.Entities.Gamification.LeagueGroup", "LeagueGroup")
+                        .WithMany("Participations")
+                        .HasForeignKey("LeagueGroupId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DeuYbsLms.Domain.Entities.Identity.StudentProfile", "StudentProfile")
+                        .WithMany("LeagueParticipations")
+                        .HasForeignKey("StudentProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("LeagueGroup");
+
+                    b.Navigation("StudentProfile");
+                });
+
             modelBuilder.Entity("DeuYbsLms.Domain.Entities.Gamification.UserBadge", b =>
                 {
                     b.HasOne("DeuYbsLms.Domain.Entities.Identity.StudentProfile", "StudentProfile")
@@ -639,6 +1093,44 @@ namespace DeuYbsLms.Infrastructure.Migrations
                         .HasForeignKey("StudentProfileId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("StudentProfile");
+                });
+
+            modelBuilder.Entity("DeuYbsLms.Domain.Entities.Gamification.UserChallengeProgress", b =>
+                {
+                    b.HasOne("DeuYbsLms.Domain.Entities.Gamification.Challenge", "Challenge")
+                        .WithMany("UserProgresses")
+                        .HasForeignKey("ChallengeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DeuYbsLms.Domain.Entities.Identity.StudentProfile", "StudentProfile")
+                        .WithMany("ChallengeProgresses")
+                        .HasForeignKey("StudentProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Challenge");
+
+                    b.Navigation("StudentProfile");
+                });
+
+            modelBuilder.Entity("DeuYbsLms.Domain.Entities.Gamification.UserInventoryItem", b =>
+                {
+                    b.HasOne("DeuYbsLms.Domain.Entities.Gamification.ShopItem", "ShopItem")
+                        .WithMany()
+                        .HasForeignKey("ShopItemId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DeuYbsLms.Domain.Entities.Identity.StudentProfile", "StudentProfile")
+                        .WithMany("Inventory")
+                        .HasForeignKey("StudentProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ShopItem");
 
                     b.Navigation("StudentProfile");
                 });
@@ -723,6 +1215,11 @@ namespace DeuYbsLms.Infrastructure.Migrations
                     b.Navigation("Tags");
                 });
 
+            modelBuilder.Entity("DeuYbsLms.Domain.Entities.Course.LearningPath", b =>
+                {
+                    b.Navigation("Courses");
+                });
+
             modelBuilder.Entity("DeuYbsLms.Domain.Entities.Course.Lesson", b =>
                 {
                     b.Navigation("Quiz");
@@ -738,6 +1235,16 @@ namespace DeuYbsLms.Infrastructure.Migrations
                     b.Navigation("Questions");
                 });
 
+            modelBuilder.Entity("DeuYbsLms.Domain.Entities.Gamification.Challenge", b =>
+                {
+                    b.Navigation("UserProgresses");
+                });
+
+            modelBuilder.Entity("DeuYbsLms.Domain.Entities.Gamification.LeagueGroup", b =>
+                {
+                    b.Navigation("Participations");
+                });
+
             modelBuilder.Entity("DeuYbsLms.Domain.Entities.Identity.AppUser", b =>
                 {
                     b.Navigation("Enrollments");
@@ -747,7 +1254,13 @@ namespace DeuYbsLms.Infrastructure.Migrations
 
             modelBuilder.Entity("DeuYbsLms.Domain.Entities.Identity.StudentProfile", b =>
                 {
+                    b.Navigation("ChallengeProgresses");
+
                     b.Navigation("EarnedBadges");
+
+                    b.Navigation("Inventory");
+
+                    b.Navigation("LeagueParticipations");
 
                     b.Navigation("XpTransactions");
                 });

@@ -4,6 +4,7 @@ using DeuYbsLms.Application;
 using DeuYbsLms.Infrastructure.Extensions;
 using DeuYbsLms.Infrastructure.Persistence;
 using DeuYbsLms.Infrastructure.Persistence.Context;
+using DeuYbsLms.API.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -41,6 +42,16 @@ builder.Services.AddControllers()
     {
         options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
     });
+
+// 4 GB Upload Limit Configurations
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 4294967296; // 4 GB
+});
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.Limits.MaxRequestBodySize = 4294967296; // 4 GB
+});
 
 // Swagger — JWT token girişi destekli
 builder.Services.AddEndpointsApiExplorer();
@@ -90,6 +101,7 @@ if (app.Environment.IsDevelopment())
 app.UseCors("AllowAll");
 app.UseStaticFiles();
 app.UseAuthentication();
+app.UseUserStatusCheck(); // Banned kullanıcı kontrolü
 app.UseAuthorization();
 app.MapControllers();
 // npx shadcn@latest init Data

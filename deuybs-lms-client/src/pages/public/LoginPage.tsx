@@ -27,9 +27,18 @@ export default function LoginPage() {
         { userId: data.userId, email: data.email, fullName: data.fullName, role: data.role as any },
         data.token
       );
-      navigate(data.role === 'Teacher' ? '/teacher/dashboard' : '/student/dashboard');
+      if (data.role === 'Admin') {
+        navigate('/admin/dashboard');
+      } else if (data.role === 'Teacher') {
+        navigate('/teacher/dashboard');
+      } else {
+        navigate('/student/dashboard');
+      }
     } catch (err: any) {
-      setError(err.response?.data?.errorMessage || 'Giriş başarısız. Bilgilerinizi kontrol edin.');
+      const msg = err.response?.data?.errorMessage || 
+                  (typeof err.response?.data === 'string' ? err.response.data : null) || 
+                  'Giriş başarısız. Bilgilerinizi kontrol edin.';
+      setError(msg);
     } finally {
       setLoading(false);
     }

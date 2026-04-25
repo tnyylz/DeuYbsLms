@@ -171,12 +171,12 @@ export default function QuizModal({ questions, onSubmit, onClose, onNextLesson }
                   <span className="font-medium">Geçme Puanı</span>
                   <span className="font-bold text-slate-900">{result.minimumPassingScore}</span>
                 </div>
-                {result.xpEarned > 0 && (
+                {result.xpResult && result.xpResult.xpAwarded > 0 && (
                   <>
                     <div className="w-full h-px bg-slate-200"></div>
                     <div className="flex justify-between items-center text-amber-600">
                       <span className="font-semibold">Kazanılan XP</span>
-                      <span className="font-bold bg-amber-50 px-2 py-1 rounded border border-amber-200">+{result.xpEarned} XP</span>
+                      <span className="font-bold bg-amber-50 px-2 py-1 rounded border border-amber-200">+{result.xpResult.xpAwarded} XP</span>
                     </div>
                   </>
                 )}

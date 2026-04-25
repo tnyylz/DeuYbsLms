@@ -1,5 +1,6 @@
-﻿// Path: DeuYbsLms.Infrastructure/Persistence/Context/AppDbContext.cs
+// Path: DeuYbsLms.Infrastructure/Persistence/Context/AppDbContext.cs
 
+using DeuYbsLms.Domain.Entities.Common;
 using DeuYbsLms.Domain.Entities.Course;
 using DeuYbsLms.Domain.Entities.Gamification;
 using DeuYbsLms.Domain.Entities.Identity;
@@ -33,10 +34,24 @@ public class AppDbContext : DbContext
     // Gamification
     public DbSet<UserBadge> UserBadges => Set<UserBadge>();
     public DbSet<XpTransaction> XpTransactions => Set<XpTransaction>();
+    public DbSet<ShopItem> ShopItems => Set<ShopItem>();
+    public DbSet<UserInventoryItem> UserInventoryItems => Set<UserInventoryItem>();
+    public DbSet<LearningPath> LearningPaths => Set<LearningPath>();
+    public DbSet<LearningPathCourse> LearningPathCourses => Set<LearningPathCourse>();
+
+    // New Gamification Features
+    public DbSet<LeagueGroup> LeagueGroups => Set<LeagueGroup>();
+    public DbSet<LeagueParticipation> LeagueParticipations => Set<LeagueParticipation>();
+    public DbSet<Challenge> Challenges => Set<Challenge>();
+    public DbSet<UserChallengeProgress> UserChallengeProgresses => Set<UserChallengeProgress>();
+
+    // Common
+    public DbSet<SystemAnnouncement> SystemAnnouncements => Set<SystemAnnouncement>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        // Infrastructure assembly'sindeki tüm IEntityTypeConfiguration'ları otomatik uygula
+        // Infrastructure assembly'indeki tüm IEntityTypeConfiguration'ları otomatik uygula
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
         base.OnModelCreating(modelBuilder);
     }

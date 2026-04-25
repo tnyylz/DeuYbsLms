@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { BookOpen, Zap, ChevronLeft, Play, Clock, CheckCircle, Award, Target, Info, Loader2 } from 'lucide-react';
 import { getCourseDetailApi } from '../../api/courses.api';
-import { getCourseProgressApi, enrollApi } from '../../api/progress.api';
+import { getCourseProgressApi, enrollApi, getMyEnrollmentsApi } from '../../api/progress.api';
+import { generateCertificateApi } from '../../api/certificate.api';
 import { getFileUrl } from '../../utils/fileUtils';
+import toast from 'react-hot-toast';
 import ThemeToggle from '../../components/shared/ThemeToggle';
 import type { CourseDetailDto, CourseProgressDto, LessonProgressDto, LessonDto } from '../../types';
 
@@ -49,6 +51,30 @@ export default function CourseDetailPage() {
       console.error(err);
     } finally {
       setEnrolling(false);
+    }
+  };
+
+  const handleClaimCertificate = async () => {
+    if (!courseId) return;
+    const loadingToast = toast.loading('Sertifika durumunuz kontrol ediliyor...');
+    try {
+      const enrollments = await getMyEnrollmentsApi();
+      const enrollment = enrollments.find(e => e.courseId === courseId);
+      if (!enrollment) throw new Error('Kayıt bulunamadı!');
+      
+      toast.loading('Sertifikanız hazırlanıyor...', { id: loadingToast });
+      await generateCertificateApi(enrollment.enrollmentId);
+      toast.success('Sertifikanız başarıyla oluşturuldu! ✅', { id: loadingToast });
+      navigate('/student/certificates');
+    } catch (err: any) {
+      toast.dismiss(loadingToast);
+      const errorMsg = err.response?.data?.message || err.response?.data || err.message || 'Başarısız.';
+      if (errorMsg.toString().toLowerCase().includes('zaten var')) {
+        toast.success('Bu kursa ait sertifikanız halihazırda mevcut.', { id: loadingToast });
+        navigate('/student/certificates');
+      } else {
+        toast.error(`Hata: ${errorMsg}`);
+      }
     }
   };
 
@@ -232,13 +258,23 @@ export default function CourseDetailPage() {
 
               <div className="relative space-y-4 text-center">
                 {isEnrolled ? (
-                   <button 
-                    onClick={() => navigate(`/course/${courseId}/lesson/${getNextLessonId()}`)}
-                    className="w-full bg-slate-900 dark:bg-indigo-600 border-2 border-slate-900 dark:border-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 text-white font-bold py-5 px-6 rounded-[24px] transition-all flex items-center justify-center gap-3 shadow-xl hover:-translate-y-1"
-                  >
-                    <Play size={20} fill="currentColor" />
-                    {progress?.completionPercentage === 0 ? 'Eğitime Başla' : 'Derse Devam Et'}
-                  </button>
+                    progress?.completionPercentage === 100 || progress?.isCompleted ? (
+                      <button 
+                        onClick={handleClaimCertificate}
+                        className="w-full bg-emerald-500 hover:bg-emerald-600 border-2 border-emerald-500 hover:border-emerald-600 text-white font-bold py-5 px-6 rounded-[24px] transition-all flex items-center justify-center gap-3 shadow-xl shadow-emerald-200 dark:shadow-none hover:-translate-y-1"
+                      >
+                        <Award size={20} />
+                        Sertifika Al
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => navigate(`/course/${courseId}/lesson/${getNextLessonId()}`)}
+                        className="w-full bg-slate-900 dark:bg-indigo-600 border-2 border-slate-900 dark:border-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 text-white font-bold py-5 px-6 rounded-[24px] transition-all flex items-center justify-center gap-3 shadow-xl hover:-translate-y-1"
+                      >
+                        <Play size={20} fill="currentColor" />
+                        {progress?.completionPercentage === 0 ? 'Eğitime Başla' : 'Derse Devam Et'}
+                      </button>
+                    )
                 ) : (
                   <button 
                     onClick={handleEnroll}

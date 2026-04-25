@@ -73,6 +73,9 @@ public class AuthService : IAuthService
         if (user is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
             return Result<AuthResponseDto>.Failure("Email veya şifre hatalı.");
 
+        if (!user.IsActive)
+            return Result<AuthResponseDto>.Failure("Hesabınız dondurulmuştur. Lütfen sistem yöneticisi ile iletişime geçin.");
+
         var token = _tokenService.GenerateToken(user);
 
         return Result<AuthResponseDto>.Success(new AuthResponseDto

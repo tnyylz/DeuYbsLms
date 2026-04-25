@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Application/DTOs/Progress/QuizResultDto.cs
+using DeuYbsLms.Application.DTOs.Gamification;
 
 namespace DeuYbsLms.Application.DTOs.Progress;
 
@@ -17,5 +17,5 @@ public class QuizResultDto
     public Guid? NextLessonId { get; set; }
     public bool IsCourseCompleted { get; set; }
     public string? EarnedBadge { get; set; }    // Varsa kazanılan rozet adı
-    public int XpEarned { get; set; }
+    public XpResultDto? XpResult { get; set; }
 }

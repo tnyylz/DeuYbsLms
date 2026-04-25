@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Application/Interfaces/Repositories/ICourseRepository.cs
+// Path: DeuYbsLms.Application/Interfaces/Repositories/ICourseRepository.cs
 
 using DeuYbsLms.Application.Common.Results;
 using DeuYbsLms.Domain.Entities.Course;
@@ -14,4 +14,5 @@ public interface ICourseRepository : IRepository<Course>
     Task<List<Course>> GetPublishedCoursesAsync();
     Task<List<Course>> GetCoursesByTeacherAsync(Guid teacherId);
     Task<List<Course>> SearchCoursesAsync(string searchTerm);
+    Task<List<Course>> GetCoursesForAdminAsync();
 }

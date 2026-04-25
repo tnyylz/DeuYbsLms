@@ -24,16 +24,19 @@ public class UploadController : ControllerBase
         if (file == null || file.Length == 0)
             return BadRequest("Dosya seçilmedi.");
 
-        // Simple validation: only images
-        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        var isDocument = folder?.ToLower() == "documents";
+        var allowedExtensions = isDocument 
+            ? new[] { ".pdf", ".doc", ".docx", ".zip", ".rar", ".txt" }
+            : new[] { ".jpg", ".jpeg", ".png", ".webp" };
+            
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (!allowedExtensions.Contains(extension))
-            return BadRequest("Sadece görsel dosyaları (.jpg, .png, .webp) yüklenebilir.");
+            return BadRequest(isDocument ? "Sadece dokümanlar (pdf, doc, vb) veya zip dosyaları yüklenebilir." : "Sadece görsel dosyaları (.jpg, .png, .webp) yüklenebilir.");
 
         try
         {
             using var stream = file.OpenReadStream();
-            var relativeUrl = await _fileService.SaveFileAsync(stream, file.FileName, folder);
+            var relativeUrl = await _fileService.SaveFileAsync(stream, file.FileName, folder ?? "general");
             return Ok(new { url = relativeUrl });
         }
         catch (Exception ex)

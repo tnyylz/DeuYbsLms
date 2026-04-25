@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Domain/Entities/Course/Quiz.cs
+// Path: DeuYbsLms.Domain/Entities/Course/Quiz.cs
 
 using DeuYbsLms.Domain.Entities.Common;
 

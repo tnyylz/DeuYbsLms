@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Application/DTOs/Course/CourseDetailDto.cs
+// Path: DeuYbsLms.Application/DTOs/Course/CourseDetailDto.cs
 
 namespace DeuYbsLms.Application.DTOs.Course;
 
@@ -14,4 +14,5 @@ public class CourseDetailDto
     public string TeacherName { get; set; } = string.Empty;
     public List<LessonDto> Lessons { get; set; } = new();
     public List<string> Tags { get; set; } = new();
+    public bool IsPublished { get; set; }
 }

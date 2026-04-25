@@ -28,7 +28,7 @@ public class LessonController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateLessonDto request)
     {
-        var course = await _courseRepository.GetByIdAsync(request.CourseId);
+        var course = await _courseRepository.GetCourseWithDetailsAsync(request.CourseId);
         if (course == null) return NotFound("Kurs bulunamadı.");
 
         // Permission check: is the user the teacher of this course?
@@ -38,6 +38,7 @@ public class LessonController : ControllerBase
         var lesson = _mapper.Map<Lesson>(request);
         lesson.Id = Guid.NewGuid();
         lesson.CreatedAt = DateTime.UtcNow;
+        lesson.OrderIndex = course.Lessons.Any() ? course.Lessons.Max(l => l.OrderIndex) + 1 : 1;
 
         await _lessonRepository.AddAsync(lesson);
         return Ok(lesson.Id);

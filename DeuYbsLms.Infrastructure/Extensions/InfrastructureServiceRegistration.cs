@@ -1,3 +1,4 @@
+using DeuYbsLms.Application.Abstractions.Services;
 using DeuYbsLms.Application.Interfaces.Repositories;
 using DeuYbsLms.Application.Interfaces.Services;
 using DeuYbsLms.Infrastructure.Persistence.Context;
@@ -26,6 +27,7 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
         services.AddScoped<IProgressRepository, ProgressRepository>();
         services.AddScoped<IQuizRepository, QuizRepository>();
+        services.AddScoped<IAnnouncementRepository, AnnouncementRepository>();
 
         // Services
         services.AddScoped<ITokenService, TokenService>();
@@ -35,6 +37,17 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<ICertificateService, CertificateService>();
         services.AddScoped<IFileService, FileService>();
         services.AddScoped<ITeacherService, TeacherService>();
+        services.AddScoped<IAdminService, AdminService>();
+        services.AddScoped<IAnnouncementService, AnnouncementService>();
+        services.AddScoped<IShopService, ShopService>();
+        services.AddScoped<ILearningPathService, LearningPathService>();
+        services.AddScoped<ILeagueService, LeagueService>();
+        services.AddScoped<IChallengeService, ChallengeService>();
+        services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IKanbanService, KanbanService>();
+        services.AddScoped<IYouTubeService, YouTubeService>();
+        services.AddHostedService<BackgroundJobs.LeagueSeasonWorker>();
+
 
         return services;
     }
