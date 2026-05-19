@@ -39,9 +39,7 @@ public class AppDbContext : DbContext
     public DbSet<LearningPath> LearningPaths => Set<LearningPath>();
     public DbSet<LearningPathCourse> LearningPathCourses => Set<LearningPathCourse>();
 
-    // New Gamification Features
-    public DbSet<LeagueGroup> LeagueGroups => Set<LeagueGroup>();
-    public DbSet<LeagueParticipation> LeagueParticipations => Set<LeagueParticipation>();
+    // Gamification Challenges
     public DbSet<Challenge> Challenges => Set<Challenge>();
     public DbSet<UserChallengeProgress> UserChallengeProgresses => Set<UserChallengeProgress>();
 

@@ -80,10 +80,10 @@ export default function AnalyticsPage() {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 py-12">
-         <div className="mb-12">
-           <h1 className="text-4xl font-black mb-2 tracking-tight uppercase text-slate-900 dark:text-slate-100">Öğrenci <span className="text-indigo-600 dark:text-indigo-400">Performansı</span></h1>
-           <p className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest text-sm">Gelişmeleri takip et ve aksiyon al.</p>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+         <div className="mb-8 sm:mb-12">
+           <h1 className="text-2xl sm:text-4xl font-black mb-2 tracking-tight uppercase text-slate-900 dark:text-slate-100">Öğrenci <span className="text-indigo-600 dark:text-indigo-400">Performansı</span></h1>
+           <p className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest text-xs sm:text-sm">Gelişmeleri takip et ve aksiyon al.</p>
         </div>
 
         {/* Stats Grid */}
@@ -130,29 +130,29 @@ export default function AnalyticsPage() {
         </div>
 
          {/* Students Table/Grid */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[3rem] overflow-hidden shadow-sm">
+         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2rem] sm:rounded-[3rem] overflow-hidden shadow-sm">
            <div className="overflow-x-auto">
-              <table className="w-full text-left">
+              <table className="w-full text-left min-w-[700px]">
                   <thead>
                     <tr className="border-b border-slate-100 dark:border-slate-800 text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 tracking-[0.25em]">
-                       <th className="px-10 py-8">Öğrenci</th>
-                       <th className="px-10 py-8">Kurs</th>
-                       <th className="px-10 py-8">İlerleme</th>
-                       <th className="px-10 py-8">Quiz Durumu</th>
-                       <th className="px-10 py-8 text-right">Aksiyon</th>
+                       <th className="px-4 sm:px-10 py-5 sm:py-8">Öğrenci</th>
+                       <th className="px-4 sm:px-10 py-5 sm:py-8">Kurs</th>
+                       <th className="px-4 sm:px-10 py-5 sm:py-8">İlerleme</th>
+                       <th className="px-4 sm:px-10 py-5 sm:py-8">Quiz Durumu</th>
+                       <th className="px-4 sm:px-10 py-5 sm:py-8 text-right">Aksiyon</th>
                     </tr>
                  </thead>
-                 <tbody className="divide-y divide-slate-50">
+                 <tbody className="divide-y divide-slate-50 dark:divide-slate-800/50">
                     <AnimatePresence>
                        {filtered.map((s, i) => (
                           <motion.tr 
-                            key={s.studentId}
+                            key={`${s.studentId}-${i}`}
                              initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group"
                           >
-                             <td className="px-10 py-8">
+                             <td className="px-4 sm:px-10 py-5 sm:py-8">
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 bg-indigo-600 dark:bg-indigo-900/50 rounded-2xl flex items-center justify-center font-black text-sm text-white dark:text-indigo-300 shadow-lg shadow-indigo-600/20 uppercase">
                                       {s.fullName.charAt(0)}
@@ -163,12 +163,12 @@ export default function AnalyticsPage() {
                                    </div>
                                 </div>
                              </td>
-                              <td className="px-10 py-8">
+                              <td className="px-4 sm:px-10 py-5 sm:py-8">
                                 <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-100 dark:border-indigo-900/50 px-4 py-2 rounded-xl uppercase tracking-widest">
                                    {s.courseTitle}
                                 </span>
                              </td>
-                             <td className="px-10 py-8">
+                             <td className="px-4 sm:px-10 py-5 sm:py-8">
                                 <div className="flex items-center gap-4">
                                     <div className="flex-1 w-24 bg-slate-100 dark:bg-slate-800 rounded-full h-2.5 overflow-hidden">
                                       <motion.div 
@@ -180,7 +180,7 @@ export default function AnalyticsPage() {
                                    <span className="text-xs font-black text-slate-900 dark:text-slate-100 uppercase">{s.completionPercentage}%</span>
                                 </div>
                              </td>
-                             <td className="px-10 py-8">
+                             <td className="px-4 sm:px-10 py-5 sm:py-8">
                                  <div className="flex flex-col gap-1.5">
                                    <span className={`text-[10px] font-black uppercase tracking-widest ${s.failedQuizAttempts > 2 ? 'text-red-500 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'}`}>
                                       {s.failedQuizAttempts} Başarısız Deneme
@@ -193,7 +193,7 @@ export default function AnalyticsPage() {
                                    )}
                                 </div>
                              </td>
-                             <td className="px-10 py-8 text-right">
+                             <td className="px-4 sm:px-10 py-5 sm:py-8 text-right">
                                  <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                                    <button title="E-posta Gönder" className="w-10 h-10 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:border-indigo-100 dark:hover:border-indigo-900 hover:shadow-lg transition-all flex items-center justify-center">
                                       <Mail size={16} />

@@ -78,16 +78,7 @@ public class AdminService : IAdminService
             monthlyCertificates.Add(new MonthlyRegistrationDto { Month = monthName, Count = certCount });
         }
 
-        // League Distributions
-        var leagueDistributions = studentProfiles
-            .GroupBy(s => s.CurrentLeagueTier)
-            .Select(g => new LeagueDistributionDto
-            {
-                LeagueName = g.Key.ToString(),
-                StudentCount = g.Count()
-            })
-            .OrderBy(l => l.LeagueName)
-            .ToList();
+
 
         // Student Leaderboard (Top 10)
         var studentLeaderboard = studentProfiles
@@ -97,8 +88,7 @@ public class AdminService : IAdminService
             {
                 FullName = s.AppUser != null ? $"{s.AppUser.FirstName} {s.AppUser.LastName}" : "Bilinmeyen Öğrenci",
                 TotalXp = s.TotalXp,
-                Level = s.CurrentLevel,
-                League = gümüşLigIsmi(s.CurrentLeagueTier)
+                Level = s.CurrentLevel
             }).ToList();
 
         // Recent Activities (Combining recent users and recent enrollments)
@@ -133,27 +123,8 @@ public class AdminService : IAdminService
             MonthlyEnrollments = monthlyEnrollments,
             MonthlyCompletedLessons = monthlyCompletedLessons,
             MonthlyCertificates = monthlyCertificates,
-            LeagueDistributions = leagueDistributions,
             StudentLeaderboard = studentLeaderboard,
             RecentActivities = recentActivities
-        };
-    }
-
-    private static string gümüşLigIsmi(LeagueTier tier)
-    {
-        return tier switch
-        {
-            LeagueTier.Demir => "Demir Ligi",
-            LeagueTier.Bronz => "Bronz Ligi",
-            LeagueTier.Gümüş => "Gümüş Ligi",
-            LeagueTier.Altın => "Altın Ligi",
-            LeagueTier.Platin => "Platin Ligi",
-            LeagueTier.Zümrüt => "Zümrüt Ligi",
-            LeagueTier.Elmas => "Elmas Ligi",
-            LeagueTier.Ustalık => "Ustalık Ligi",
-            LeagueTier.Üstatlık => "Üstatlık Ligi",
-            LeagueTier.Şampiyonluk => "Şampiyonluk Ligi",
-            _ => "Demir Ligi"
         };
     }
 

@@ -79,7 +79,7 @@ export default function NotificationCenter() {
       case 'Achievement': return <Trophy className="text-amber-500" size={18} />;
       case 'Challenge': return <Target className="text-indigo-500" size={18} />;
       case 'LevelUp': return <Zap className="text-emerald-500" size={18} />;
-      case 'LeagueUpdate': return <Flame className="text-orange-500" size={18} />;
+      case 'General': return <Flame className="text-orange-500" size={18} />;
       default: return <Info className="text-slate-400" size={18} />;
     }
   };
@@ -89,7 +89,7 @@ export default function NotificationCenter() {
       case 'Achievement': return 'bg-amber-50 dark:bg-amber-900/10';
       case 'Challenge': return 'bg-indigo-50 dark:bg-indigo-900/10';
       case 'LevelUp': return 'bg-emerald-50 dark:bg-emerald-900/10';
-      case 'LeagueUpdate': return 'bg-orange-50 dark:bg-orange-900/10';
+      case 'General': return 'bg-orange-50 dark:bg-orange-900/10';
       default: return 'bg-slate-50 dark:bg-slate-800/50';
     }
   };

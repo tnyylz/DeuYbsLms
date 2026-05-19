@@ -392,7 +392,7 @@ export default function UserManagement() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white dark:bg-gray-800 w-full max-w-lg overflow-hidden rounded-[2rem] shadow-2xl border border-gray-100 dark:border-gray-700 flex flex-col"
+              className="bg-white dark:bg-gray-800 w-full max-w-lg max-h-[90vh] overflow-hidden rounded-[2rem] shadow-2xl border border-gray-100 dark:border-gray-700 flex flex-col"
             >
               <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
                 <h2 className="text-xl font-bold text-gray-900 dark:text-white">Yeni Kullanıcı Ekle</h2>
@@ -404,7 +404,7 @@ export default function UserManagement() {
                 </button>
               </div>
 
-              <form onSubmit={handleAddUser} className="p-6 space-y-4">
+              <form onSubmit={handleAddUser} className="flex-1 overflow-y-auto p-6 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ad</label>

@@ -181,8 +181,8 @@ export default function LearningRoom() {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950 text-slate-900 dark:text-white font-sans flex flex-col transition-colors duration-300">
       {/* Upper Navigation / Progress Bar */}
-      <nav className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-6 py-3 sticky top-0 z-30 shadow-sm transition-colors">
-        <div className="max-w-[1800px] mx-auto flex items-center justify-between gap-8">
+      <nav className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 sm:px-6 py-3 sticky top-0 z-30 shadow-sm transition-colors">
+        <div className="max-w-[1800px] mx-auto flex items-center justify-between gap-4 sm:gap-8">
           <div className="flex items-center gap-4 min-w-0">
             <button 
               onClick={() => navigate(`/course/${courseId}/detail`)} 
@@ -227,9 +227,9 @@ export default function LearningRoom() {
         </div>
       </nav>
 
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row md:overflow-hidden">
         {/* Main Content (Left) */}
-        <main className="flex-1 overflow-y-auto bg-slate-50 dark:bg-slate-950 custom-scrollbar relative">
+        <main className="flex-1 overflow-y-visible md:overflow-y-auto bg-slate-50 dark:bg-slate-950 custom-scrollbar relative">
           <div className="max-w-5xl mx-auto p-4 md:p-8 space-y-8">
             
             {/* Video Section or Document Only */}
@@ -381,7 +381,7 @@ export default function LearningRoom() {
         </main>
 
         {/* Sidebar (Right) */}
-        <aside className="w-full md:w-[350px] lg:w-[400px] border-l border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-col z-20 shadow-inner transition-colors">
+        <aside className="w-full md:w-[350px] lg:w-[400px] border-l border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex flex-col z-20 shadow-inner transition-colors md:overflow-hidden h-screen md:h-auto shrink-0">
           <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900 sticky top-0 transition-colors">
              <div>
                 <h3 className="font-bold text-slate-900 dark:text-white text-lg">Kurs İçeriği</h3>

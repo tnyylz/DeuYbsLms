@@ -43,7 +43,7 @@ export default function TeacherCourseDetailPage() {
     fetchData();
   }, [courseId]);
 
-  const handleSaveField = async (field: keyof CourseDetailDto) => {
+  const handleSaveField = async (_field: keyof CourseDetailDto) => {
     if (!courseId) return;
     try {
       setLoading(true);

@@ -2,7 +2,6 @@
 
 using DeuYbsLms.Domain.Entities.Common;
 using DeuYbsLms.Domain.Entities.Gamification;
-using DeuYbsLms.Domain.Enums;
 
 namespace DeuYbsLms.Domain.Entities.Identity;
 
@@ -21,10 +20,7 @@ public class StudentProfile : BaseEntity
     public int CurrentStreak { get; set; } = 0;
     public DateTime? LastActivityDate { get; set; }
     
-    // Leagues
-    public LeagueTier CurrentLeagueTier { get; set; } = LeagueTier.Demir;
-    public ICollection<LeagueParticipation> LeagueParticipations { get; set; } = new List<LeagueParticipation>();
-
+    
     // Challenges
     public ICollection<UserChallengeProgress> ChallengeProgresses { get; set; } = new List<UserChallengeProgress>();
 

@@ -18,7 +18,6 @@ public class GamificationService : IGamificationService
     private readonly IRepository<UserBadge> _badgeRepository;
     private readonly IRepository<XpTransaction> _xpRepository;
     private readonly IEnrollmentRepository _enrollmentRepository;
-    private readonly ILeagueService _leagueService;
     private readonly IChallengeService _challengeService;
     private readonly INotificationService _notificationService;
     private readonly AppDbContext _context;
@@ -28,7 +27,6 @@ public class GamificationService : IGamificationService
         IRepository<UserBadge> badgeRepository,
         IRepository<XpTransaction> xpRepository,
         IEnrollmentRepository enrollmentRepository,
-        ILeagueService leagueService,
         IChallengeService challengeService,
         INotificationService notificationService,
         AppDbContext context)
@@ -37,7 +35,6 @@ public class GamificationService : IGamificationService
         _badgeRepository = badgeRepository;
         _xpRepository = xpRepository;
         _enrollmentRepository = enrollmentRepository;
-        _leagueService = leagueService;
         _challengeService = challengeService;
         _notificationService = notificationService;
         _context = context;
@@ -136,12 +133,12 @@ public class GamificationService : IGamificationService
         {
             profile.TotalXp -= profile.XpToNextLevel;
             profile.CurrentLevel++;
-            profile.XpToNextLevel = (int)(profile.XpToNextLevel * 1.2);
+            // Seviye atlamak giderek daha da zorlaşsın (1.2 yerine 1.5 çarpanı)
+            profile.XpToNextLevel = (int)(profile.XpToNextLevel * 1.5);
         }
 
         await _profileRepository.UpdateAsync(profile);
 
-        await _leagueService.UpdateLeaguePointsAsync(studentId, xpAmount);
         await _challengeService.UpdateChallengeProgressAsync(studentId, ChallengeType.XpGain, xpAmount);
 
         if (profile.CurrentLevel > initialLevel)
@@ -244,8 +241,7 @@ public class GamificationService : IGamificationService
             .SelectMany(e => e.LessonProgresses)
             .Count(lp => lp.IsQuizPassed);
 
-        // Lig ve Challenge bilgilerini al
-        var leagueResult = await _leagueService.GetMyLeagueLeaderboardAsync(studentId);
+        // Challenge bilgilerini al
         var challengesResult = await _challengeService.GetMyChallengesAsync(studentId);
 
         return Result<StudentGamificationDto>.Success(new StudentGamificationDto
@@ -269,10 +265,6 @@ public class GamificationService : IGamificationService
                     EarnedAt = x.CreatedAt
                 }).ToList(),
             
-            CurrentLeagueTier = profile.CurrentLeagueTier.ToString().ToUpper(),
-            LeagueRank = (leagueResult.IsSuccess && leagueResult.Data?.Rankings != null) 
-                ? leagueResult.Data.Rankings.FirstOrDefault(r => r.StudentId == studentId)?.Rank 
-                : null,
             
             CurrentTitle = (await _context.UserInventoryItems
                 .Include(ui => ui.ShopItem)

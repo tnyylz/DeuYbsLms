@@ -231,7 +231,7 @@ export default function TeacherLessonBuilder() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 selection:bg-indigo-100">
-      <nav className="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-6 py-4 sticky top-0 z-50">
+      <nav className="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl px-4 sm:px-6 py-4 sticky top-0 z-50">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
              <button onClick={() => navigate(`/teacher/course/${courseId}`)} className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-300 hover:border-indigo-100 dark:hover:border-indigo-900 transition-all">
@@ -239,7 +239,7 @@ export default function TeacherLessonBuilder() {
              </button>
              <div className="flex items-center gap-2">
                 <BookOpen className="text-indigo-600 dark:text-indigo-400" size={20} />
-                <span className="font-black tracking-tight text-lg uppercase">{lessonId ? 'Dersi Düzenle' : 'Yeni Ders Ekle'}</span>
+                <span className="font-black tracking-tight text-base sm:text-lg uppercase">{lessonId ? 'Dersi Düzenle' : 'Yeni Ders Ekle'}</span>
              </div>
           </div>
           <div className="flex items-center gap-4">
@@ -248,11 +248,11 @@ export default function TeacherLessonBuilder() {
         </div>
       </nav>
 
-      <div className="max-w-5xl mx-auto px-6 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           
           <div className="lg:col-span-2 space-y-8">
-            <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-10 rounded-[2.5rem] shadow-sm">
+            <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-10 rounded-[2rem] sm:rounded-[2.5rem] shadow-sm">
                <h2 className="text-2xl font-black mb-8 flex items-center gap-3 text-slate-900 dark:text-slate-100">
                   <span className="w-2 h-8 bg-indigo-600 rounded-full" />
                   TEMEL BİLGİLER
@@ -280,7 +280,7 @@ export default function TeacherLessonBuilder() {
                </div>
             </section>
 
-            <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-10 rounded-[2.5rem] shadow-sm">
+            <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-10 rounded-[2rem] sm:rounded-[2.5rem] shadow-sm">
                <div className="flex items-center justify-between mb-8">
                  <h2 className="text-2xl font-black flex items-center gap-3 text-slate-900 dark:text-slate-100">
                     <span className="w-2 h-8 bg-indigo-600 rounded-full" />
@@ -376,8 +376,8 @@ export default function TeacherLessonBuilder() {
 
                   {activeTab === 'quiz' && (
                       <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
-                         <div className="flex items-center justify-between bg-indigo-50 dark:bg-indigo-900/20 p-6 rounded-3xl border border-indigo-100 dark:border-indigo-800/50">
-                            <div>
+                         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-0 bg-indigo-50 dark:bg-indigo-900/20 p-6 rounded-3xl border border-indigo-100 dark:border-indigo-800/50">
+                            <div className="text-center sm:text-left">
                                 <h3 className="font-black text-indigo-900 dark:text-indigo-100 uppercase tracking-tight">Baraj Puanı Ayarı</h3>
                                 <p className="text-xs text-indigo-600/60 dark:text-indigo-400/60 font-bold uppercase tracking-widest mt-1">Dersi geçmek için gereken minimum puan (%)</p>
                             </div>
@@ -460,12 +460,12 @@ export default function TeacherLessonBuilder() {
             </section>
           </div>
 
-          <div className="space-y-8">
-            <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-10 rounded-[2.5rem] shadow-sm space-y-6">
+          <div className="space-y-6 sm:space-y-8">
+            <section className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-10 rounded-[2rem] sm:rounded-[2.5rem] shadow-sm space-y-6">
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 mb-4 uppercase tracking-widest text-center">XP Ödülü Ayarla</label>
-                  <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800">
-                    <div className="flex flex-col items-center justify-between gap-6 mb-8">
+                  <div className="bg-slate-50 dark:bg-slate-800/50 p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] border border-slate-100 dark:border-slate-800">
+                    <div className="flex flex-col xl:flex-row items-center justify-between gap-4 sm:gap-6 mb-8">
                         <div className="flex items-center gap-4">
                             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500
                                 ${xpReward >= 500 ? 'bg-amber-100 text-amber-600 shadow-xl shadow-amber-500/20 rotate-12' : 
@@ -520,7 +520,7 @@ export default function TeacherLessonBuilder() {
                 </div>
             </section>
             
-            <button onClick={handleSave} disabled={loading} className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white transition-all py-6 rounded-[2.5rem] font-black text-xl flex items-center justify-center gap-3 shadow-2xl shadow-indigo-600/30 uppercase tracking-widest hover:-translate-y-1">
+            <button onClick={handleSave} disabled={loading} className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white transition-all py-4 sm:py-6 rounded-[2rem] sm:rounded-[2.5rem] font-black text-lg sm:text-xl flex items-center justify-center gap-3 shadow-2xl shadow-indigo-600/30 uppercase tracking-widest hover:-translate-y-1">
                {loading ? (
                  <Loader2 key="save-loader" size={24} className="animate-spin" />
                ) : (

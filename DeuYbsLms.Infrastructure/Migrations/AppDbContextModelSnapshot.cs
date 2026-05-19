@@ -452,74 +452,6 @@ namespace DeuYbsLms.Infrastructure.Migrations
                     b.ToTable("Challenges");
                 });
 
-            modelBuilder.Entity("DeuYbsLms.Domain.Entities.Gamification.LeagueGroup", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("EndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsClosed")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<int>("SeasonNumber")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Tier")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("LeagueGroups");
-                });
-
-            modelBuilder.Entity("DeuYbsLms.Domain.Entities.Gamification.LeagueParticipation", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("FinalRank")
-                        .HasColumnType("int");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid>("LeagueGroupId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("SeasonPoints")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("StudentProfileId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("LeagueGroupId");
-
-                    b.HasIndex("StudentProfileId");
-
-                    b.ToTable("LeagueParticipations");
-                });
-
             modelBuilder.Entity("DeuYbsLms.Domain.Entities.Gamification.ShopItem", b =>
                 {
                     b.Property<Guid>("Id")
@@ -780,9 +712,6 @@ namespace DeuYbsLms.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
-
-                    b.Property<int>("CurrentLeagueTier")
-                        .HasColumnType("int");
 
                     b.Property<int>("CurrentLevel")
                         .ValueGeneratedOnAdd()
@@ -1070,25 +999,6 @@ namespace DeuYbsLms.Infrastructure.Migrations
                     b.Navigation("Lesson");
                 });
 
-            modelBuilder.Entity("DeuYbsLms.Domain.Entities.Gamification.LeagueParticipation", b =>
-                {
-                    b.HasOne("DeuYbsLms.Domain.Entities.Gamification.LeagueGroup", "LeagueGroup")
-                        .WithMany("Participations")
-                        .HasForeignKey("LeagueGroupId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("DeuYbsLms.Domain.Entities.Identity.StudentProfile", "StudentProfile")
-                        .WithMany("LeagueParticipations")
-                        .HasForeignKey("StudentProfileId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("LeagueGroup");
-
-                    b.Navigation("StudentProfile");
-                });
-
             modelBuilder.Entity("DeuYbsLms.Domain.Entities.Gamification.UserBadge", b =>
                 {
                     b.HasOne("DeuYbsLms.Domain.Entities.Identity.StudentProfile", "StudentProfile")
@@ -1243,11 +1153,6 @@ namespace DeuYbsLms.Infrastructure.Migrations
                     b.Navigation("UserProgresses");
                 });
 
-            modelBuilder.Entity("DeuYbsLms.Domain.Entities.Gamification.LeagueGroup", b =>
-                {
-                    b.Navigation("Participations");
-                });
-
             modelBuilder.Entity("DeuYbsLms.Domain.Entities.Identity.AppUser", b =>
                 {
                     b.Navigation("Enrollments");
@@ -1262,8 +1167,6 @@ namespace DeuYbsLms.Infrastructure.Migrations
                     b.Navigation("EarnedBadges");
 
                     b.Navigation("Inventory");
-
-                    b.Navigation("LeagueParticipations");
 
                     b.Navigation("XpTransactions");
                 });

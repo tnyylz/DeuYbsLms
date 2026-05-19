@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, Users, BarChart2, PlusCircle, LogOut, ChevronRight, LayoutDashboard, Settings, Layers } from 'lucide-react';
+import { BookOpen, Users, BarChart2, PlusCircle, LogOut, ChevronRight, LayoutDashboard, Settings, Layers, Menu, X } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { getTeacherDashboardApi } from '../../api/teacher.api';
 import { getFileUrl } from '../../utils/fileUtils';
 import type { TeacherDashboardDto } from '../../types';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import ThemeToggle from '../../components/shared/ThemeToggle';
 import NotificationCenter from '../../components/shared/NotificationCenter';
 
@@ -14,6 +14,7 @@ export default function TeacherDashboard() {
   const navigate = useNavigate();
   const [data, setData] = useState<TeacherDashboardDto | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -46,48 +47,97 @@ export default function TeacherDashboard() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 selection:bg-indigo-100">
       {/* Sidebar / Topbar Mixed Dashboard Layout */}
-      <nav className="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl sticky top-0 z-50 px-6 py-4">
+      <nav className="border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl sticky top-0 z-50 px-4 sm:px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-600/20">
+            <div className="md:hidden">
+              <button 
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="p-2 -ml-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
+              >
+                {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              </button>
+            </div>
+            
+            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex shrink-0 items-center justify-center shadow-lg shadow-indigo-600/20">
               <BookOpen className="text-white" size={22} />
             </div>
-            <div>
+            <div className="hidden sm:block">
               <span className="font-bold text-lg tracking-tight block">DEÜ YBS <span className="text-indigo-600">LMS</span></span>
               <span className="text-[10px] uppercase tracking-widest text-indigo-500 font-bold">Eğitmen Portalı</span>
             </div>
           </div>
-          <div className="flex items-center gap-6">
-            <Link to="/teacher/analytics" className="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all text-sm font-semibold flex items-center gap-2 group">
-              <BarChart2 size={16} className="group-hover:text-indigo-600 transition-colors" /> Analitik
-            </Link>
-            <div className="h-4 w-px bg-slate-200 dark:bg-slate-700" />
-            <Link to="/teacher/learning-paths" className="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all text-sm font-semibold flex items-center gap-2 group">
-              <Layers size={16} className="group-hover:text-indigo-600 transition-colors" /> Yol Haritaları
-            </Link>
-            <div className="h-4 w-px bg-slate-200 dark:bg-slate-700" />
-            <NotificationCenter />
-            <div className="h-4 w-px bg-slate-200 dark:bg-slate-700" />
-            <ThemeToggle />
-            <div className="h-4 w-px bg-slate-200 dark:bg-slate-700" />
-            <div className="flex items-center gap-3">
-              <div className="text-right hidden sm:block">
+
+          <div className="flex items-center gap-2 sm:gap-6">
+            <div className="hidden md:flex items-center gap-6">
+              <Link to="/teacher/analytics" className="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all text-sm font-semibold flex items-center gap-2 group">
+                <BarChart2 size={16} className="group-hover:text-indigo-600 transition-colors" /> Analitik
+              </Link>
+              <div className="h-4 w-px bg-slate-200 dark:bg-slate-700" />
+              <Link to="/teacher/learning-paths" className="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all text-sm font-semibold flex items-center gap-2 group">
+                <Layers size={16} className="group-hover:text-indigo-600 transition-colors" /> Yol Haritaları
+              </Link>
+              <div className="h-4 w-px bg-slate-200 dark:bg-slate-700" />
+            </div>
+            
+            <div className="flex items-center gap-2 sm:gap-4 bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-700">
+               <NotificationCenter />
+               <ThemeToggle />
+            </div>
+
+            <div className="hidden sm:flex items-center gap-3">
+              <div className="h-4 w-px bg-slate-200 dark:bg-slate-700" />
+              <div className="text-right">
                 <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{user?.fullName}</p>
                 <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tighter">Kıdemli Eğitmen</p>
               </div>
               <button 
                 onClick={handleLogout}
-                className="w-9 h-9 border border-slate-200 dark:border-slate-700 rounded-full flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
+                className="w-9 h-9 border border-slate-200 dark:border-slate-700 rounded-full flex shrink-0 items-center justify-center text-slate-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:border-red-200 dark:hover:border-red-900 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all"
               >
                 <LogOut size={16} />
               </button>
             </div>
           </div>
         </div>
+
+        {/* Mobile Navigation Dropdown */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -20, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: 'auto' }}
+              exit={{ opacity: 0, y: -20, height: 0 }}
+              className="md:hidden overflow-hidden bg-white/95 dark:bg-slate-900/95 border-t border-slate-200 dark:border-slate-800 mt-4 -mx-4 sm:-mx-6 px-4 sm:px-6"
+            >
+              <div className="flex flex-col gap-1 py-4">
+                <Link to="/teacher/analytics" className="flex items-center gap-3 p-3 text-slate-600 dark:text-slate-300 font-bold hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all" onClick={() => setIsMobileMenuOpen(false)}>
+                  <BarChart2 size={20} /> Analitik
+                </Link>
+                <Link to="/teacher/learning-paths" className="flex items-center gap-3 p-3 text-slate-600 dark:text-slate-300 font-bold hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Layers size={20} /> Yol Haritaları
+                </Link>
+                <div className="h-px bg-slate-200 dark:bg-slate-800 my-2" />
+                <div className="flex items-center gap-3 p-3">
+                  <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex shrink-0 items-center justify-center font-bold">
+                    {user?.fullName?.[0]}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-900 dark:text-slate-100">{user?.fullName}</p>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tighter">Kıdemli Eğitmen</p>
+                  </div>
+                </div>
+                <button onClick={handleLogout} className="flex items-center gap-3 p-3 text-rose-600 font-bold hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-xl transition-all w-full text-left">
+                  <LogOut size={20} /> Oturumu Kapat
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-6 py-12">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 sm:mb-12">
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

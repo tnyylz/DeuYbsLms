@@ -52,7 +52,7 @@ export default function AdminDashboard() {
       {/* 4 Premium Value Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Toplam Öğrenci */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-[24px] shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between transition-all hover:shadow-md">
+        <div className="bg-white dark:bg-gray-800 p-5 sm:p-6 rounded-2xl sm:rounded-[24px] shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between transition-all hover:shadow-md">
           <div>
             <h3 className="text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider">Toplam Öğrenci</h3>
             <p className="text-3xl font-black mt-2 text-gray-900 dark:text-white">{stats?.totalStudents || 0}</p>
@@ -63,7 +63,7 @@ export default function AdminDashboard() {
         </div>
         
         {/* Toplam Eğitmen */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-[24px] shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between transition-all hover:shadow-md">
+        <div className="bg-white dark:bg-gray-800 p-5 sm:p-6 rounded-2xl sm:rounded-[24px] shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between transition-all hover:shadow-md">
           <div>
             <h3 className="text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider">Toplam Eğitmen</h3>
             <p className="text-3xl font-black mt-2 text-gray-900 dark:text-white">{stats?.totalTeachers || 0}</p>
@@ -74,7 +74,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Toplam Kurs */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-[24px] shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between transition-all hover:shadow-md">
+        <div className="bg-white dark:bg-gray-800 p-5 sm:p-6 rounded-2xl sm:rounded-[24px] shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between transition-all hover:shadow-md">
           <div>
             <h3 className="text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider">Toplam Kurs</h3>
             <p className="text-3xl font-black mt-2 text-gray-900 dark:text-white">{stats?.totalCourses || 0}</p>
@@ -85,7 +85,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Tamamlanan Kurslar */}
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-[24px] shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between transition-all hover:shadow-md">
+        <div className="bg-white dark:bg-gray-800 p-5 sm:p-6 rounded-2xl sm:rounded-[24px] shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between transition-all hover:shadow-md">
           <div>
             <h3 className="text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase tracking-wider">Tamamlanan Kurs</h3>
             <p className="text-3xl font-black mt-2 text-gray-900 dark:text-white">{stats?.totalCompletedEnrollments || 0}</p>
@@ -99,7 +99,7 @@ export default function AdminDashboard() {
       {/* Visual Analytics Section (Dual Graphs) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Aylık Tamamlanan Ders Sayısı Grafiği */}
-        <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
+        <div className="bg-white dark:bg-gray-800 p-5 sm:p-6 lg:p-8 rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">Aylık Tamamlanan Ders Sayısı</h3>
@@ -110,8 +110,8 @@ export default function AdminDashboard() {
             </div>
           </div>
           
-          <div className="h-72 w-full">
-            {isMounted && (
+          <div className="h-72 w-full min-h-[288px]">
+            {isMounted && stats && (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={stats?.monthlyCompletedLessons || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
@@ -135,7 +135,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Aylık Dağıtılan Sertifika Sayısı Grafiği */}
-        <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
+        <div className="bg-white dark:bg-gray-800 p-5 sm:p-6 lg:p-8 rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">Aylık Dağıtılan Sertifika Sayısı</h3>
@@ -146,8 +146,8 @@ export default function AdminDashboard() {
             </div>
           </div>
           
-          <div className="h-72 w-full">
-            {isMounted && (
+          <div className="h-72 w-full min-h-[288px]">
+            {isMounted && stats && (
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={stats?.monthlyCertificates || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
@@ -171,41 +171,12 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Middle Section (League Distributions & Top Courses) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Lig Dağılım Grafiği */}
-        <div className="lg:col-span-2 bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">Liglere Göre Öğrenci Dağılımı</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">Oyunlaştırma liglerindeki aktif öğrenci sayıları</p>
-            </div>
-            <Shield className="text-indigo-500 w-6 h-6 animate-pulse" />
-          </div>
-          
-          <div className="h-72 w-full">
-            {isMounted && (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stats?.leagueDistributions || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="leagueName" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
-                  <Tooltip 
-                      contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                      itemStyle={{ color: '#6366f1', fontWeight: 'bold' }}
-                  />
-                  <Bar dataKey="studentCount" name="Öğrenci Sayısı" fill="#6366f1" radius={[8, 8, 0, 0]} maxBarSize={45} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-            {(!stats?.leagueDistributions || stats.leagueDistributions.length === 0) && (
-              <p className="text-sm text-gray-500 text-center py-12">Henüz liglerde öğrenci bulunmuyor.</p>
-            )}
-          </div>
-        </div>
 
+
+      {/* Middle Section (Top Courses) */}
+      <div className="grid grid-cols-1 gap-8">
         {/* Top Courses */}
-        <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors flex flex-col">
+        <div className="bg-white dark:bg-gray-800 p-5 sm:p-6 lg:p-8 rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors flex flex-col">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white">Popüler Kurslar</h3>
             <Star className="text-yellow-500 w-6 h-6" />
@@ -232,7 +203,7 @@ export default function AdminDashboard() {
       {/* Bottom Section (Leaderboard & Recent Activities) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Öğrenci Liderlik Sıralaması */}
-        <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
+        <div className="bg-white dark:bg-gray-800 p-5 sm:p-6 lg:p-8 rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors">
           <div className="flex items-center space-x-3 mb-6">
             <Trophy className="text-yellow-500 w-6 h-6" />
             <h3 className="text-xl font-bold text-gray-900 dark:text-white">Öğrenci XP Sıralaması (Top 10)</h3>
@@ -246,7 +217,6 @@ export default function AdminDashboard() {
                   <th className="py-3 px-2">Ad Soyad</th>
                   <th className="py-3 px-2 text-center">Seviye</th>
                   <th className="py-3 px-2 text-center">XP</th>
-                  <th className="py-3 px-2 text-right">Lig</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-700/50">
@@ -269,16 +239,11 @@ export default function AdminDashboard() {
                         {student.totalXp.toLocaleString()}
                       </span>
                     </td>
-                    <td className="py-3.5 px-2 text-right">
-                      <span className="px-2.5 py-1 text-[10px] font-black uppercase tracking-wider rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                        {student.league}
-                      </span>
-                    </td>
                   </tr>
                 ))}
                 {(!stats?.studentLeaderboard || stats.studentLeaderboard.length === 0) && (
                   <tr>
-                    <td colSpan={5} className="py-8 text-center text-sm text-gray-500">Sıralama verisi bulunmuyor.</td>
+                    <td colSpan={4} className="py-8 text-center text-sm text-gray-500">Sıralama verisi bulunmuyor.</td>
                   </tr>
                 )}
               </tbody>
@@ -287,7 +252,7 @@ export default function AdminDashboard() {
         </div>
 
         {/* Sistemdeki Aktiviteler */}
-        <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors flex flex-col">
+        <div className="bg-white dark:bg-gray-800 p-5 sm:p-6 lg:p-8 rounded-2xl lg:rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 transition-colors flex flex-col">
           <div className="flex items-center space-x-3 mb-6">
             <Activity className="text-indigo-500 w-6 h-6" />
             <h3 className="text-xl font-bold text-gray-900 dark:text-white">Sistemdeki Aktiviteler</h3>

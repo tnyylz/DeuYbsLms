@@ -41,12 +41,10 @@ public static class InfrastructureServiceRegistration
         services.AddScoped<IAnnouncementService, AnnouncementService>();
         services.AddScoped<IShopService, ShopService>();
         services.AddScoped<ILearningPathService, LearningPathService>();
-        services.AddScoped<ILeagueService, LeagueService>();
         services.AddScoped<IChallengeService, ChallengeService>();
         services.AddScoped<INotificationService, NotificationService>();
         services.AddScoped<IKanbanService, KanbanService>();
         services.AddScoped<IYouTubeService, YouTubeService>();
-        services.AddHostedService<BackgroundJobs.LeagueSeasonWorker>();
 
 
         return services;

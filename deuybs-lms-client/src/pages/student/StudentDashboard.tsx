@@ -33,22 +33,7 @@ export default function StudentDashboard() {
   const [viewMode, setViewMode] = useState<'grid' | 'galaxy'>('grid');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const getLeagueColor = (tier?: string | null) => {
-    const safeTier = tier || 'DEMİR';
-    switch (safeTier.toLowerCase()) {
-      case 'demir': case 'iron': return 'from-slate-400 to-slate-600';
-      case 'bronz': case 'bronze': return 'from-orange-500 to-orange-800';
-      case 'gümüş': case 'silver': return 'from-gray-300 to-gray-500';
-      case 'altın': case 'gold': return 'from-yellow-400 to-yellow-600';
-      case 'platin': case 'platinum': return 'from-teal-400 to-teal-700';
-      case 'zümrüt': case 'emerald': return 'from-emerald-400 to-emerald-700';
-      case 'elmas': case 'diamond': return 'from-blue-400 to-blue-700';
-      case 'ustalık': case 'master': return 'from-purple-500 to-purple-800';
-      case 'üstatlık': case 'grandmaster': return 'from-red-500 to-red-800';
-      case 'şampiyonluk': case 'challenger': return 'from-amber-400 to-sky-500 shadow-sky-500/20';
-      default: return 'from-indigo-600 to-purple-600';
-    }
-  };
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -152,7 +137,7 @@ export default function StudentDashboard() {
             <NavLink to="/courses" icon={BookOpen}>Kurslar</NavLink>
             <NavLink to="/student/learning-paths" icon={MapIcon}>Yol Haritaları</NavLink>
             <NavLink to="/student/kanban" icon={Layout} badge="YENİ">Pano</NavLink>
-            <NavLink to="/student/leagues" icon={Shield}>Ligler</NavLink>
+ 
             <NavLink to="/student/certificates" icon={Award}>Sertifikalar</NavLink>
           </div>
 
@@ -195,9 +180,7 @@ export default function StudentDashboard() {
                 <Link to="/student/kanban" className="flex items-center gap-3 p-3 text-indigo-600 dark:text-indigo-400 font-bold hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all" onClick={() => setIsMobileMenuOpen(false)}>
                   <Layout size={20} /> Pano <span className="bg-amber-400 text-amber-950 text-[10px] px-2 py-0.5 rounded-full">YENİ</span>
                 </Link>
-                <Link to="/student/leagues" className="flex items-center gap-3 p-3 text-slate-600 dark:text-slate-300 font-bold hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all" onClick={() => setIsMobileMenuOpen(false)}>
-                  <Shield size={20} /> Ligler
-                </Link>
+
                 <Link to="/student/certificates" className="flex items-center gap-3 p-3 text-slate-600 dark:text-slate-300 font-bold hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all" onClick={() => setIsMobileMenuOpen(false)}>
                   <Award size={20} /> Sertifikalarım
                 </Link>
@@ -211,10 +194,10 @@ export default function StudentDashboard() {
         </AnimatePresence>
       </nav>
 
-      <div className="max-w-6xl mx-auto px-6 py-10 space-y-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6 sm:space-y-8">
         
         {/* SECTION 1: Hoşgeldin & Seviye Kartı */}
-        <section className="bg-white dark:bg-slate-900 rounded-2xl p-8 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <section className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 sm:gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 dark:bg-indigo-900/10 rounded-full blur-3xl -mx-20 -my-20 pointer-events-none opacity-60"></div>
           
           <div className="relative z-10">
@@ -283,13 +266,13 @@ export default function StudentDashboard() {
           )}
         </section>
 
-        <div className="grid md:grid-cols-12 gap-8">
+        <div className="grid md:grid-cols-12 gap-6 lg:gap-8">
           
           {/* LEFT COLUMN */}
           <div className="md:col-span-8 space-y-8">
             {/* SECTION 2: Kaldığın Yerden Devam Et */}
             {enrollments.length > 0 && (
-              <section className="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-2xl p-8 text-white shadow-md relative overflow-hidden group">
+              <section className="bg-gradient-to-r from-indigo-600 to-blue-600 rounded-2xl p-6 sm:p-8 text-white shadow-md relative overflow-hidden group">
                 <div className="absolute right-0 top-0 h-full w-1/2 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
                 <div className="absolute -right-10 -bottom-10 opacity-20 transform group-hover:scale-110 transition-transform duration-700">
                   <Play size={160} className="text-white" fill="currentColor" />
@@ -373,24 +356,6 @@ export default function StudentDashboard() {
 
           {/* RIGHT COLUMN */}
           <div className="md:col-span-4 space-y-6">
-            {/* League Status Card */}
-            <div className={`bg-gradient-to-br ${getLeagueColor(gamification?.currentLeagueTier)} p-8 rounded-[3rem] text-white shadow-xl relative overflow-hidden group`}>
-               <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-               <div className="relative z-10 text-center">
-                  <div className="flex flex-col items-center mb-6">
-                    <Shield size={48} className="text-white drop-shadow-xl mb-3" />
-                    <p className="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">Aktif Lig Seviyen</p>
-                    <p className="text-3xl font-black tracking-tighter uppercase">{gamification?.currentLeagueTier || 'DEMİR'}</p>
-                  </div>
-                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10 mb-6 flex justify-between items-center text-xs font-black uppercase tracking-widest">
-                     <span>GRUP SIRALAMAN:</span>
-                     <span className="text-lg">#{gamification?.leagueRank || '-'}</span>
-                  </div>
-                  <Link to="/student/leagues" className="w-full bg-white text-indigo-600 py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:gap-4 transition-all shadow-lg">
-                     LİG ARENASINA GİT <ChevronRight size={16} />
-                  </Link>
-               </div>
-            </div>
 
             {/* Leaderboard Widget */}
             <section className="bg-white dark:bg-slate-900 rounded-[2rem] p-6 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-indigo-900/20 relative overflow-hidden transition-all">

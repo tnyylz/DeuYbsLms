@@ -28,8 +28,7 @@ export interface AdminDashboardStats {
   monthlyEnrollments: MonthlyRegistration[];
   monthlyCompletedLessons: MonthlyRegistration[];
   monthlyCertificates: MonthlyRegistration[];
-  leagueDistributions: { leagueName: string, studentCount: number }[];
-  studentLeaderboard: { fullName: string, totalXp: number, level: number, league: string }[];
+  studentLeaderboard: { fullName: string, totalXp: number, level: number }[];
   topCourses: AdminTopCourse[];
   recentActivities: AdminRecentActivity[];
 }

@@ -9,5 +9,5 @@ public enum NotificationType
     Challenge = 3,
     LevelUp = 4,
     CourseUpdate = 5,
-    LeagueUpdate = 6
+    General = 6
 }

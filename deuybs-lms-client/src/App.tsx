@@ -18,7 +18,7 @@ import ShopPage from './pages/student/ShopPage';
 import ProfilePage from './pages/student/ProfilePage';
 import LearningPathsPage from './pages/student/LearningPathsPage';
 import LearningPathDetailPage from './pages/student/LearningPathDetailPage';
-import LeaguesPage from './pages/student/LeaguesPage';
+
 import LearningKanban from './pages/student/LearningKanban';
 
 // Teacher
@@ -62,7 +62,7 @@ export default function App() {
         <Route path="/student/profile" element={<ProtectedRoute role="Student"><ProfilePage /></ProtectedRoute>} />
         <Route path="/student/learning-paths" element={<ProtectedRoute role="Student"><LearningPathsPage /></ProtectedRoute>} />
         <Route path="/student/learning-path/:pathId" element={<ProtectedRoute role="Student"><LearningPathDetailPage /></ProtectedRoute>} />
-        <Route path="/student/leagues" element={<ProtectedRoute role="Student"><LeaguesPage /></ProtectedRoute>} />
+
         <Route path="/student/kanban" element={<ProtectedRoute role="Student"><LearningKanban /></ProtectedRoute>} />
 
         {/* Teacher */}

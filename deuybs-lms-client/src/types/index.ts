@@ -164,7 +164,7 @@ export interface AnswerOptionDto {
   optionText: string;
 }
 
-// ===== GAMIFICATION, LEAGUES & CHALLENGES =====
+// ===== GAMIFICATION & CHALLENGES =====
 export interface ChallengeDto {
   id: string;
   title: string;
@@ -178,30 +178,7 @@ export interface ChallengeDto {
   progressPercent: number;
 }
 
-export interface LeagueDto {
-  id: string;
-  tier: string;
-  seasonNumber: number;
-  endDate: string;
-  isClosed: boolean;
-}
 
-export interface LeagueParticipationDto {
-  studentId: string;
-  fullName: string;
-  profilePictureUrl?: string;
-  points: number;
-  rank: number;
-  isPromotionZone: boolean;
-  isRelegationZone: boolean;
-}
-
-export interface LeagueLeaderboardDto {
-  tier: string;
-  seasonNumber: number;
-  endDate: string;
-  rankings: LeagueParticipationDto[];
-}
 
 export interface StudentGamificationDto {
   totalXp: number;
@@ -214,8 +191,6 @@ export interface StudentGamificationDto {
   xpMultiplier: number;
   badges: BadgeDto[];
   recentXpTransactions: XpTransactionDto[];
-  currentLeagueTier: string;
-  leagueRank?: number | null;
   currentTitle?: string | null;
   profileFrameColor?: string | null;
   activeChallenges: ChallengeDto[];
@@ -397,7 +372,7 @@ export interface NotificationDto {
   id: string;
   title: string;
   message: string;
-  type: 'System' | 'Achievement' | 'Challenge' | 'LevelUp' | 'CourseUpdate' | 'LeagueUpdate';
+  type: 'System' | 'Achievement' | 'Challenge' | 'LevelUp' | 'CourseUpdate' | 'General';
   isRead: boolean;
   actionUrl?: string;
   createdAt: string;
