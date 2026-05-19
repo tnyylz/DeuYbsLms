@@ -4,7 +4,8 @@ import { BookOpen, ChevronLeft, Save, Video, FileDown, Loader2, CheckCircle, Hel
 import ThemeToggle from '../../components/shared/ThemeToggle';
 import { 
   createLessonApi, updateLessonApi, uploadDocumentApi, 
-  createOrUpdateQuizApi, getQuizByLessonApi, uploadVideoToYouTubeApi 
+  createOrUpdateQuizApi, getQuizByLessonApi, uploadVideoToYouTubeApi,
+  getLessonByIdApi
 } from '../../api/teacher.api';
 import type { CreateQuestionRequest } from '../../types';
 import toast from 'react-hot-toast';
@@ -39,28 +40,29 @@ export default function TeacherLessonBuilder() {
   useEffect(() => {
     if (lessonId && courseId) {
       setLoading(true);
-      import('../../api/courses.api').then(({ getCourseDetailApi }) => {
-        getCourseDetailApi(courseId)
-          .then(course => {
-            const lesson = course.lessons.find((l: any) => l.id === lessonId);
-            if (lesson) {
-              setTitle(lesson.title || '');
-              setDescription(lesson.description || '');
-              setDurationInSeconds(lesson.durationInSeconds || 300);
-              setXpReward(lesson.xpReward || 50);
-              
-              if (lesson.resourceUrl) {
-                setActiveTab('document');
-                setResourceUrl(lesson.resourceUrl);
-              } else {
-                setActiveTab('video');
-                setVideoUrl(lesson.videoUrl || '');
-              }
+      
+      // Doğrudan Lesson API'si ile ders bilgilerini çek
+      getLessonByIdApi(lessonId)
+        .then(lesson => {
+          if (lesson) {
+            setTitle(lesson.title || '');
+            setDescription(lesson.description || '');
+            setDurationInSeconds(lesson.durationInSeconds || 300);
+            setXpReward(lesson.xpReward || 50);
+            setVideoUrl(lesson.videoUrl || '');
+            setResourceUrl(lesson.resourceUrl || '');
+            
+            if (lesson.videoUrl) {
+              setActiveTab('video');
+            } else if (lesson.resourceUrl) {
+              setActiveTab('document');
+            } else {
+              setActiveTab('video');
             }
-          })
-          .catch(() => toast.error('Ders bilgisi yüklenemedi.'))
-          .finally(() => setLoading(false));
-      });
+          }
+        })
+        .catch(() => toast.error('Ders bilgisi yüklenemedi.'))
+        .finally(() => setLoading(false));
 
       // Fetch existing quiz if any
       getQuizByLessonApi(lessonId)
@@ -68,7 +70,6 @@ export default function TeacherLessonBuilder() {
           if (quiz && quiz.questions && quiz.questions.length > 0) {
             setQuestions(quiz.questions);
             setMinPassingScore(quiz.minimumPassingScore || 70);
-            console.log('Mevcut quiz yüklendi:', quiz);
           }
         })
         .catch(err => console.error('Quiz yüklenirken hata:', err));
@@ -117,7 +118,8 @@ export default function TeacherLessonBuilder() {
         toast.success('Video başarıyla yüklendi! ✅', { id: loadingToast });
       } catch (err: any) {
         console.error(err);
-        toast.error('Video yüklenirken bir hata oluştu.', { id: loadingToast });
+        const msg = err.response?.data || 'Video yüklenirken bir hata oluştu.';
+        toast.error(`Yükleme hatası: ${msg}`, { id: loadingToast, duration: 6000 });
       } finally {
         setIsUploading(false);
         setUploadProgress(0);
@@ -133,8 +135,8 @@ export default function TeacherLessonBuilder() {
       const payload = {
         title,
         description,
-        videoUrl: activeTab === 'video' ? videoUrl : undefined,
-        resourceUrl: activeTab === 'document' ? resourceUrl : undefined,
+        videoUrl: videoUrl || null,
+        resourceUrl: resourceUrl || null,
         durationInSeconds,
         xpReward,
         courseId
@@ -325,8 +327,12 @@ export default function TeacherLessonBuilder() {
                                  onClick={() => videoFileInputRef.current?.click()}
                                  className={`w-full h-[58px] border-2 border-dashed rounded-2xl flex items-center justify-center gap-3 transition-all font-bold ${isUploading ? 'border-indigo-400 bg-indigo-50 text-indigo-600' : 'border-slate-300 hover:border-indigo-400 hover:bg-slate-50 text-slate-500'}`}
                               >
-                                 {isUploading ? <Loader2 size={20} className="animate-spin" /> : <Video size={20} />}
-                                 {isUploading ? `Yükleniyor %${uploadProgress}` : 'Video Dosyası Seç (.mp4)'}
+                                 {isUploading ? (
+                                   <Loader2 key="video-upload-loader" size={20} className="animate-spin" />
+                                 ) : (
+                                   <Video key="video-icon" size={20} />
+                                 )}
+                                 <span>{isUploading ? `Yükleniyor %${uploadProgress}` : 'Video Dosyası Seç (.mp4)'}</span>
                               </button>
                               <input 
                                  ref={videoFileInputRef}
@@ -515,7 +521,13 @@ export default function TeacherLessonBuilder() {
             </section>
             
             <button onClick={handleSave} disabled={loading} className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white transition-all py-6 rounded-[2.5rem] font-black text-xl flex items-center justify-center gap-3 shadow-2xl shadow-indigo-600/30 uppercase tracking-widest hover:-translate-y-1">
-              {loading ? <Loader2 size={24} className="animate-spin" /> : <><Save size={24} /> Kaydet</>}
+               {loading ? (
+                 <Loader2 key="save-loader" size={24} className="animate-spin" />
+               ) : (
+                 <span key="save-btn-content" className="flex items-center gap-3">
+                   <Save size={24} /> Kaydet
+                 </span>
+               )}
             </button>
           </div>
         </div>

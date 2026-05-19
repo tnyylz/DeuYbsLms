@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { BookOpen, Zap, ChevronLeft, Clock, Target, Info, Edit3, PlusCircle, Save, X, Trash2, Image as ImageIcon } from 'lucide-react';
 import { getCourseDetailApi } from '../../api/courses.api';
-import { updateCourseApi } from '../../api/teacher.api';
+import { updateCourseApi, deleteLessonApi } from '../../api/teacher.api';
 import { getFileUrl } from '../../utils/fileUtils';
 import ThemeToggle from '../../components/shared/ThemeToggle';
 import type { CourseDetailDto, LessonDto } from '../../types';
@@ -92,7 +92,22 @@ export default function TeacherCourseDetailPage() {
     }
   };
 
+  const handleDeleteLesson = async (lessonId: string, lessonTitle: string) => {
+    if (!window.confirm(`"${lessonTitle}" dersini silmek istediğinize emin misiniz?`)) return;
+    try {
+      setLoading(true);
+      await deleteLessonApi(lessonId);
+      toast.success('Ders silindi.');
+      await fetchData();
+    } catch {
+      toast.error('Ders silinemedi.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading && !course) {
+
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
         <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
@@ -286,7 +301,7 @@ export default function TeacherCourseDetailPage() {
                            <button onClick={() => navigate(`/teacher/course/${courseId}/lesson/${lesson.id}`)} className="p-2 text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-colors">
                               <Edit3 size={18} />
                            </button>
-                           <button className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-colors">
+                           <button onClick={() => handleDeleteLesson(lesson.id, lesson.title)} className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-xl transition-colors">
                               <Trash2 size={18} />
                            </button>
                         </div>

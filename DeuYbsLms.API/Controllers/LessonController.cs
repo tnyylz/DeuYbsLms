@@ -25,6 +25,15 @@ public class LessonController : ControllerBase
         _mapper = mapper;
     }
 
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id)
+    {
+        var lesson = await _lessonRepository.GetLessonWithQuizAsync(id);
+        if (lesson == null) return NotFound("Ders bulunamadı.");
+        var result = _mapper.Map<LessonDto>(lesson);
+        return Ok(result);
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateLessonDto request)
     {
@@ -47,32 +56,66 @@ public class LessonController : ControllerBase
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] CreateLessonDto request)
     {
-        var lesson = await _lessonRepository.GetByIdAsync(id);
-        if (lesson == null) return NotFound("Ders bulunamadı.");
+        try
+        {
+            var lesson = await _lessonRepository.GetByIdAsync(id);
+            if (lesson == null) return NotFound("Ders bulunamadı.");
 
-        var course = await _courseRepository.GetByIdAsync(lesson.CourseId);
-        var teacherId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
-        if (course!.TeacherId != teacherId) return Forbid();
+            var course = await _courseRepository.GetByIdAsync(lesson.CourseId);
+            if (course == null) return NotFound("Kurs bulunamadı.");
 
-        _mapper.Map(request, lesson);
-        lesson.UpdatedAt = DateTime.UtcNow;
+            var teacherIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(teacherIdStr)) return Unauthorized();
+            var teacherId = Guid.Parse(teacherIdStr);
 
-        await _lessonRepository.UpdateAsync(lesson);
-        return NoContent();
+            if (course.TeacherId != teacherId) return Forbid();
+
+            // AutoMapper'ın üzerine yazmaması gereken kritik alanları koru
+            var originalOrderIndex = lesson.OrderIndex;
+            var originalCourseId = lesson.CourseId;
+            var originalCreatedAt = lesson.CreatedAt;
+
+            _mapper.Map(request, lesson);
+
+            // Korunan alanları geri yükle
+            lesson.OrderIndex = originalOrderIndex;
+            lesson.CourseId = originalCourseId;
+            lesson.CreatedAt = originalCreatedAt;
+            lesson.UpdatedAt = DateTime.UtcNow;
+
+            await _lessonRepository.UpdateAsync(lesson);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Ders güncellenirken hata oluştu: {ex.InnerException?.Message ?? ex.Message}");
+        }
     }
 
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        var lesson = await _lessonRepository.GetByIdAsync(id);
-        if (lesson == null) return NotFound("Ders bulunamadı.");
+        try
+        {
+            var lesson = await _lessonRepository.GetByIdAsync(id);
+            if (lesson == null) return NotFound("Ders bulunamadı.");
 
-        var course = await _courseRepository.GetByIdAsync(lesson.CourseId);
-        var teacherId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
-        if (course!.TeacherId != teacherId) return Forbid();
+            var course = await _courseRepository.GetByIdAsync(lesson.CourseId);
+            if (course == null) return NotFound("Kurs bulunamadı.");
 
-        await _lessonRepository.DeleteAsync(lesson);
-        return NoContent();
+            var teacherIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(teacherIdStr)) return Unauthorized();
+            var teacherId = Guid.Parse(teacherIdStr);
+
+            if (course.TeacherId != teacherId) return Forbid();
+
+            await _lessonRepository.DeleteAsync(lesson);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Ders silinirken hata oluştu: {ex.InnerException?.Message ?? ex.Message}");
+        }
     }
 
     [HttpPost("reorder")]

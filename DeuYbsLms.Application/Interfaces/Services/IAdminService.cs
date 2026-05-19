@@ -14,4 +14,5 @@ public interface IAdminService
     
     Task<List<AdminCourseDto>> GetAllCoursesAsync();
     Task DeleteCourseAsync(Guid courseId);
+    Task AssignCourseAsync(Guid courseId, CourseAssignmentDto request);
 }

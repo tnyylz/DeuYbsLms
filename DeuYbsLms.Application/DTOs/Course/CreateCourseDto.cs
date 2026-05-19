@@ -14,4 +14,5 @@ public class CreateCourseDto
     public int TotalXpReward { get; set; } = 500;
     public List<string> Tags { get; set; } = new();
     public bool IsPublished { get; set; }
+    public Guid TeacherId { get; set; }
 }

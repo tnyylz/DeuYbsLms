@@ -40,6 +40,11 @@ public class ChallengeService : IChallengeService
             var progress = await _context.UserChallengeProgresses
                 .FirstOrDefaultAsync(p => p.StudentProfileId == profile.Id && p.ChallengeId == challenge.Id);
 
+            if (progress != null && progress.CurrentValue == -1)
+            {
+                continue; // Ödülü alınmış görevi gösterme
+            }
+
             results.Add(new ChallengeDto
             {
                 Id = challenge.Id,
@@ -83,7 +88,7 @@ public class ChallengeService : IChallengeService
                 await _context.UserChallengeProgresses.AddAsync(progress);
             }
 
-            if (progress.IsCompleted) continue;
+            if (progress.IsCompleted || progress.CurrentValue == -1) continue;
 
             progress.CurrentValue += amount;
             if (progress.CurrentValue >= challenge.TargetValue)
@@ -114,18 +119,16 @@ public class ChallengeService : IChallengeService
         if (progress == null || !progress.IsCompleted)
             return Result<XpResultDto>.Failure("Challenge henüz tamamlanmadı.");
 
-        // Ödül zaten alındı mı? (IsClaimed gibi bir alan eklenebilir ama şu an IsCompleted ile reward verilmemiş olabilir)
-        // Basitlik için: Bir Challenge sadece bir kere tamamlanabilir.
-        // Eğer daha önce ödül verildiyse bunu takip eden bir mekanizma ekleyelim.
-        
-        // Şimdilik: AwardXpAsync çağır ve progress'i "bitti" olarak işaretle
+        if (progress.CurrentValue == -1)
+            return Result<XpResultDto>.Failure("Bu görevin ödülü zaten alınmış.");
+
         using (var scope = _scopeFactory.CreateScope())
         {
             var gamificationService = scope.ServiceProvider.GetRequiredService<IGamificationService>();
             var result = await gamificationService.AwardXpAsync(studentId, progress.Challenge.XpReward, $"Challenge Tamamlandı: {progress.Challenge.Title}");
             
-            // Challenge'ı User'dan kaldır veya pasif yap (Örn: Bir kereye mahsus)
-            _context.UserChallengeProgresses.Remove(progress); 
+            // Silmek yerine, ödül alındığını belirtmek için CurrentValue'yu -1 yapıyoruz
+            progress.CurrentValue = -1;
             await _context.SaveChangesAsync();
 
             return Result<XpResultDto>.Success(result);

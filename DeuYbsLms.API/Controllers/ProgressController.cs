@@ -24,14 +24,7 @@ public class ProgressController : ControllerBase
     private Guid GetStudentId() =>
         Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-    [HttpPost("enroll/{courseId:guid}")]
-    public async Task<IActionResult> Enroll(Guid courseId)
-    {
-        var result = await _progressService.EnrollStudentAsync(GetStudentId(), courseId);
-        if (!result.IsSuccess)
-            return BadRequest(result.ErrorMessage);
-        return Ok("Kursa başarıyla kayıt oldunuz.");
-    }
+    // Enroll endpoint is removed to prevent self-enrollment
 
     [HttpGet("{courseId:guid}")]
     public async Task<IActionResult> GetProgress(Guid courseId)

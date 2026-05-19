@@ -10,6 +10,17 @@ export default function UserManagement() {
   const [selectedUserDetail, setSelectedUserDetail] = useState<AdminUserDetail | null>(null);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [isAddingUser, setIsAddingUser] = useState(false);
+  const [newUserForm, setNewUserForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    role: 1, // 1: Student, 2: Teacher, 3: Admin
+    studentNumber: '',
+    gradeLevel: 1
+  });
   
   // Pagination & Filtering state
   const [searchTerm, setSearchTerm] = useState('');
@@ -69,6 +80,27 @@ export default function UserManagement() {
     }
   };
 
+  const handleAddUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setIsAddingUser(true);
+      await adminApi.createUser({
+        ...newUserForm,
+        // Sadece öğrenci ise studentNumber ve gradeLevel gönder
+        studentNumber: newUserForm.role === 1 ? newUserForm.studentNumber : undefined,
+        gradeLevel: newUserForm.role === 1 ? newUserForm.gradeLevel : undefined
+      });
+      toast.success('Kullanıcı başarıyla oluşturuldu.');
+      setIsAddUserModalOpen(false);
+      setNewUserForm({ firstName: '', lastName: '', email: '', password: '', role: 1, studentNumber: '', gradeLevel: 1 });
+      fetchUsers();
+    } catch (error: any) {
+      toast.error(error.response?.data?.errorMessage || 'Kullanıcı oluşturulurken bir hata oluştu.');
+    } finally {
+      setIsAddingUser(false);
+    }
+  };
+
   const getRoleId = (role: string | number) => {
     if (typeof role === 'number') return role;
     if (role === 'Student') return 1;
@@ -99,15 +131,23 @@ export default function UserManagement() {
                 <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Platformdaki tüm kullanıcıları inceleyip rollerini yönetin.</p>
             </div>
             
-            <div className="relative w-full sm:w-72">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input 
-                    type="text" 
-                    placeholder="İsim veya E-posta ara..." 
-                    className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all dark:text-white"
-                    value={searchTerm}
-                    onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                />
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+                <div className="relative w-full sm:w-72">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                    <input 
+                        type="text" 
+                        placeholder="İsim veya E-posta ara..." 
+                        className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all dark:text-white"
+                        value={searchTerm}
+                        onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                    />
+                </div>
+                <button 
+                  onClick={() => setIsAddUserModalOpen(true)}
+                  className="w-full sm:w-auto px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-medium transition-colors whitespace-nowrap"
+                >
+                  + Yeni Kullanıcı
+                </button>
             </div>
         </div>
 
@@ -341,6 +381,85 @@ export default function UserManagement() {
                   Kapat
                 </button>
               </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Add User Modal */}
+        {isAddUserModalOpen && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white dark:bg-gray-800 w-full max-w-lg overflow-hidden rounded-[2rem] shadow-2xl border border-gray-100 dark:border-gray-700 flex flex-col"
+            >
+              <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Yeni Kullanıcı Ekle</h2>
+                <button 
+                  onClick={() => setIsAddUserModalOpen(false)}
+                  className="p-2 hover:bg-white dark:hover:bg-gray-700 rounded-xl transition-colors cursor-pointer"
+                >
+                  <X className="w-6 h-6 text-gray-400" />
+                </button>
+              </div>
+
+              <form onSubmit={handleAddUser} className="p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Ad</label>
+                    <input type="text" required value={newUserForm.firstName} onChange={e => setNewUserForm({...newUserForm, firstName: e.target.value})} className="w-full p-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none dark:text-white" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Soyad</label>
+                    <input type="text" required value={newUserForm.lastName} onChange={e => setNewUserForm({...newUserForm, lastName: e.target.value})} className="w-full p-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none dark:text-white" />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">E-Posta</label>
+                  <input type="email" required value={newUserForm.email} onChange={e => setNewUserForm({...newUserForm, email: e.target.value})} className="w-full p-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none dark:text-white" />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Şifre</label>
+                  <input type="password" required value={newUserForm.password} onChange={e => setNewUserForm({...newUserForm, password: e.target.value})} className="w-full p-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none dark:text-white" />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Rol</label>
+                  <select value={newUserForm.role} onChange={e => setNewUserForm({...newUserForm, role: parseInt(e.target.value)})} className="w-full p-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none dark:text-white">
+                    <option value={1}>Öğrenci</option>
+                    <option value={2}>Öğretmen</option>
+                    <option value={3}>Admin</option>
+                  </select>
+                </div>
+
+                {newUserForm.role === 1 && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Öğrenci Numarası</label>
+                      <input type="text" required value={newUserForm.studentNumber} onChange={e => setNewUserForm({...newUserForm, studentNumber: e.target.value})} className="w-full p-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none dark:text-white" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Sınıf</label>
+                      <select required value={newUserForm.gradeLevel} onChange={e => setNewUserForm({...newUserForm, gradeLevel: parseInt(e.target.value)})} className="w-full p-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none dark:text-white">
+                        <option value={1}>1. Sınıf</option>
+                        <option value={2}>2. Sınıf</option>
+                        <option value={3}>3. Sınıf</option>
+                        <option value={4}>4. Sınıf</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-4 flex justify-end gap-3 border-t border-gray-100 dark:border-gray-700">
+                  <button type="button" onClick={() => setIsAddUserModalOpen(false)} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">İptal</button>
+                  <button type="submit" disabled={isAddingUser} className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-medium transition-colors disabled:opacity-50">
+                    {isAddingUser ? 'Ekleniyor...' : 'Kullanıcı Ekle'}
+                  </button>
+                </div>
+              </form>
             </motion.div>
           </div>
         )}

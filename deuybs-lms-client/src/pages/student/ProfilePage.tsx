@@ -204,9 +204,12 @@ export default function ProfilePage() {
               <h2 className="text-2xl font-black mt-6 tracking-tight text-slate-900 dark:text-white">{profile?.firstName} {profile?.lastName}</h2>
               <p className="text-slate-400 dark:text-slate-500 font-bold text-sm uppercase tracking-widest mt-1 mb-6">{profile?.email}</p>
  
-              <div className="flex items-center justify-center gap-3">
+              <div className="flex flex-wrap items-center justify-center gap-3">
                 <span className="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-xl text-xs font-black border border-indigo-100 dark:border-indigo-800 uppercase tracking-wider">
                   SEVİYE {profile?.currentLevel}
+                </span>
+                <span className="px-4 py-2 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-xl text-xs font-black border border-purple-100 dark:border-purple-800 uppercase tracking-wider">
+                  {profile?.gradeLevel}. SINIF
                 </span>
                 <span className="px-4 py-2 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-xl text-xs font-black border border-emerald-100 dark:border-emerald-800 uppercase tracking-wider">
                   AKTİF ÖĞRENCİ

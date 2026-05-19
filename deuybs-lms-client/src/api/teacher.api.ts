@@ -49,6 +49,11 @@ export const deleteLessonApi = async (id: string) => {
   await axiosInstance.delete(`/Lesson/${id}`);
 };
 
+export const getLessonByIdApi = async (id: string) => {
+  const res = await axiosInstance.get(`/Lesson/${id}`);
+  return res.data;
+};
+
 export const reorderLessonsApi = async (orders: { id: string, orderIndex: number }[]) => {
   await axiosInstance.post('/Lesson/reorder', orders);
 };
@@ -81,6 +86,7 @@ export const uploadVideoToYouTubeApi = async (
 
   const res = await axiosInstance.post('/YouTube/upload', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 30 * 60 * 1000, // 30 dakika — büyük video dosyaları için
     onUploadProgress: (progressEvent) => {
       if (progressEvent.total && onProgress) {
         const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);

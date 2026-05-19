@@ -21,10 +21,10 @@ export default function AdminLayout() {
   };
 
   const menuItems = [
-    { path: '/admin/dashboard', icon: <LayoutDashboard className="w-5 h-5" />, label: 'Dashboard' },
-    { path: '/admin/users', icon: <Users className="w-5 h-5" />, label: 'User Management' },
-    { path: '/admin/courses', icon: <BookOpen className="w-5 h-5" />, label: 'Course List' },
-    { path: '/admin/announcements', icon: <Megaphone className="w-5 h-5" />, label: 'Announcements' },
+    { path: '/admin/dashboard', icon: <LayoutDashboard className="w-5 h-5" />, label: 'Kontrol Paneli' },
+    { path: '/admin/users', icon: <Users className="w-5 h-5" />, label: 'Kullanıcı Yönetimi' },
+    { path: '/admin/courses', icon: <BookOpen className="w-5 h-5" />, label: 'Kurs Yönetimi' },
+    { path: '/admin/announcements', icon: <Megaphone className="w-5 h-5" />, label: 'Duyurular' },
     { path: '/admin/challenges', icon: <Target className="w-5 h-5" />, label: 'Görev Yönetimi' },
     { path: '/admin/shop', icon: <ShoppingBag className="w-5 h-5" />, label: 'Mağaza Yönetimi' },
   ];
@@ -35,7 +35,7 @@ export default function AdminLayout() {
       <aside className="w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col transition-colors duration-200">
         <div className="p-6">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-indigo-600 bg-clip-text text-transparent">
-            Admin Panel
+            Yönetici Paneli
           </h1>
         </div>
 
@@ -66,7 +66,7 @@ export default function AdminLayout() {
             </div>
             <div>
               <p className="text-sm font-medium">{user.fullName}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">System Admin</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Sistem Yöneticisi</p>
             </div>
           </div>
           <button
@@ -74,7 +74,7 @@ export default function AdminLayout() {
             className="w-full flex items-center space-x-3 px-4 py-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
           >
             <LogOut className="w-5 h-5" />
-            <span>Logout</span>
+            <span>Çıkış Yap</span>
           </button>
         </div>
       </aside>
@@ -82,10 +82,7 @@ export default function AdminLayout() {
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
         <GlobalAnnouncement />
-        <header className="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center px-8 justify-between transition-colors duration-200">
-          <h2 className="text-xl font-semibold capitalize">
-            {location.pathname.split('/').pop()?.replace('-', ' ')}
-          </h2>
+        <header className="h-16 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center px-8 justify-end transition-colors duration-200">
           {/* Dashboard Actions */}
           <div className="flex items-center gap-2">
             <NotificationCenter />

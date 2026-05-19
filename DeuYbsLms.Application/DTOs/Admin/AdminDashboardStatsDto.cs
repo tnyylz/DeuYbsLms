@@ -5,10 +5,32 @@ public class AdminDashboardStatsDto
     public int TotalUsers { get; set; }
     public int TotalCourses { get; set; }
     public int TotalEnrollments { get; set; }
+    public int TotalStudents { get; set; }
+    public int TotalTeachers { get; set; }
+    public int TotalCompletedEnrollments { get; set; }
 
     public List<MonthlyRegistrationDto> MonthlyRegistrations { get; set; } = new();
+    public List<MonthlyRegistrationDto> MonthlyEnrollments { get; set; } = new();
+    public List<MonthlyRegistrationDto> MonthlyCompletedLessons { get; set; } = new();
+    public List<MonthlyRegistrationDto> MonthlyCertificates { get; set; } = new();
+    public List<LeagueDistributionDto> LeagueDistributions { get; set; } = new();
+    public List<StudentLeaderboardDto> StudentLeaderboard { get; set; } = new();
     public List<AdminTopCourseDto> TopCourses { get; set; } = new();
     public List<AdminRecentActivityDto> RecentActivities { get; set; } = new();
+}
+
+public class LeagueDistributionDto
+{
+    public string LeagueName { get; set; } = string.Empty;
+    public int StudentCount { get; set; }
+}
+
+public class StudentLeaderboardDto
+{
+    public string FullName { get; set; } = string.Empty;
+    public int TotalXp { get; set; }
+    public int Level { get; set; }
+    public string League { get; set; } = string.Empty;
 }
 
 public class MonthlyRegistrationDto

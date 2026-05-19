@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { BookOpen, Zap, ChevronLeft, Play, Clock, CheckCircle, Award, Target, Info, Loader2 } from 'lucide-react';
+import { BookOpen, Zap, ChevronLeft, Play, Clock, CheckCircle, Award, Target, Info } from 'lucide-react';
 import { getCourseDetailApi } from '../../api/courses.api';
 import { getCourseProgressApi, enrollApi, getMyEnrollmentsApi } from '../../api/progress.api';
 import { generateCertificateApi } from '../../api/certificate.api';
@@ -16,7 +16,6 @@ export default function CourseDetailPage() {
   const [course, setCourse] = useState<CourseDetailDto | null>(null);
   const [progress, setProgress] = useState<CourseProgressDto | null>(null);
   const [loading, setLoading] = useState(true);
-  const [enrolling, setEnrolling] = useState(false);
 
   const fetchData = async () => {
     if (!courseId) return;
@@ -41,18 +40,7 @@ export default function CourseDetailPage() {
     fetchData();
   }, [courseId]);
 
-  const handleEnroll = async () => {
-    if (!courseId) return;
-    setEnrolling(true);
-    try {
-      await enrollApi(courseId);
-      await fetchData();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setEnrolling(false);
-    }
-  };
+
 
   const handleClaimCertificate = async () => {
     if (!courseId) return;
@@ -99,10 +87,41 @@ export default function CourseDetailPage() {
   }
 
   const isEnrolled = !!progress;
-  
+
+  if (!course) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+        <div className="text-center bg-white dark:bg-slate-900 p-12 rounded-[32px] shadow-xl border border-slate-200 dark:border-slate-800 max-w-md mx-6">
+          <BookOpen className="text-slate-200 dark:text-slate-800 mx-auto mb-6" size={64} />
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Kurs Bulunamadı</h2>
+          <button onClick={() => navigate('/courses')} className="mt-6 text-indigo-600 dark:text-indigo-400 font-bold hover:underline">Kurslara Dön</button>
+        </div>
+      </div>
+    );
+  }
+
+  // Eğer kullanıcı bu kursa kayıtlı (atanmış) değilse içeriği gösterme
+  if (!loading && !isEnrolled) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center">
+        <div className="text-center bg-white dark:bg-slate-900 p-12 rounded-[32px] shadow-xl border border-slate-200 dark:border-slate-800 max-w-md mx-6">
+          <Zap className="text-amber-500 mx-auto mb-6" size={64} fill="currentColor" />
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-white mb-2">Erişim Reddedildi</h2>
+          <p className="text-slate-500 dark:text-slate-400">Bu kursa henüz atanmadınız. Lütfen yöneticinizle iletişime geçin.</p>
+          <button onClick={() => navigate('/courses')} className="mt-6 text-indigo-600 dark:text-indigo-400 font-bold hover:underline">Kurslarıma Dön</button>
+        </div>
+      </div>
+    );
+  }
+
   const getNextLessonId = () => {
     if (!progress || !course) return course?.lessons[0]?.id;
-    const nextIncomplete = progress.lessonProgresses.find((lp: LessonProgressDto) => !lp.isVideoCompleted);
+    // Bir ders ancak video tamamlanmış VE quiz (varsa) geçilmişse tamamlanmış sayılır
+    const nextIncomplete = progress.lessonProgresses.find((lp: LessonProgressDto) => {
+      const lesson = course.lessons.find(l => l.id === lp.lessonId);
+      const isLessonDone = lp.isVideoCompleted && (!lesson?.hasQuiz || lp.isQuizPassed);
+      return !isLessonDone;
+    });
     return nextIncomplete ? nextIncomplete.lessonId : course.lessons[0].id;
   };
 
@@ -201,12 +220,12 @@ export default function CourseDetailPage() {
                 <div className="p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-xl text-indigo-600 dark:text-indigo-400">
                   <Target size={20} />
                 </div>
-                Müfredat {isEnrolled ? 'Erişimi' : 'Önizleme'}
+                Müfredat Erişimi
               </h2>
               <div className="bg-white dark:bg-slate-900 rounded-[32px] border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden transition-colors">
                 {course.lessons.map((lesson: LessonDto, idx: number) => {
                   const lessonProgress = progress?.lessonProgresses.find((lp: LessonProgressDto) => lp.lessonId === lesson.id);
-                  const isCompleted = lessonProgress?.isVideoCompleted;
+                  const isCompleted = lessonProgress?.isVideoCompleted && (!lesson.hasQuiz || lessonProgress?.isQuizPassed);
                   const canAccess = isEnrolled && (lessonProgress?.isUnlocked || idx === 0);
 
                    return (
@@ -226,7 +245,7 @@ export default function CourseDetailPage() {
                             <span className="text-amber-500 dark:text-amber-400">+{lesson.xpReward} XP</span>
                           </p>
                         </div>
-                        {isEnrolled && !canAccess && (
+                        {!canAccess && (
                           <div className="text-slate-300">
                             <Zap size={20} className="grayscale" />
                           </div>
@@ -249,48 +268,31 @@ export default function CourseDetailPage() {
               <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 dark:bg-indigo-600/10 rounded-full blur-3xl -mr-16 -mt-16 opacity-50"></div>
               
               <div className="relative text-center space-y-2">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 dark:text-indigo-300">{isEnrolled ? 'Eğitim Durumu' : 'Ücretsiz Erişim'}</p>
-                <h3 className="text-5xl font-black text-slate-900 dark:text-white tracking-tight">{isEnrolled ? `%${progress?.completionPercentage}` : 'Ücretsiz'}</h3>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400 dark:text-indigo-300">Eğitim Durumu</p>
+                <h3 className="text-5xl font-black text-slate-900 dark:text-white tracking-tight">%{progress?.completionPercentage}</h3>
                 <p className="text-slate-400 dark:text-slate-500 text-sm font-medium pt-2">
-                  {isEnrolled ? 'Kursu tamamlama oranınız' : 'Hemen kaydolun ve öğrenmeye başlayın.'}
+                  Kursu tamamlama oranınız
                 </p>
               </div>
 
               <div className="relative space-y-4 text-center">
-                {isEnrolled ? (
-                    progress?.completionPercentage === 100 || progress?.isCompleted ? (
-                      <button 
-                        onClick={handleClaimCertificate}
-                        className="w-full bg-emerald-500 hover:bg-emerald-600 border-2 border-emerald-500 hover:border-emerald-600 text-white font-bold py-5 px-6 rounded-[24px] transition-all flex items-center justify-center gap-3 shadow-xl shadow-emerald-200 dark:shadow-none hover:-translate-y-1"
-                      >
-                        <Award size={20} />
-                        Sertifika Al
-                      </button>
-                    ) : (
-                      <button 
-                        onClick={() => navigate(`/course/${courseId}/lesson/${getNextLessonId()}`)}
-                        className="w-full bg-slate-900 dark:bg-indigo-600 border-2 border-slate-900 dark:border-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 text-white font-bold py-5 px-6 rounded-[24px] transition-all flex items-center justify-center gap-3 shadow-xl hover:-translate-y-1"
-                      >
-                        <Play size={20} fill="currentColor" />
-                        {progress?.completionPercentage === 0 ? 'Eğitime Başla' : 'Derse Devam Et'}
-                      </button>
-                    )
-                ) : (
-                  <button 
-                    onClick={handleEnroll}
-                    disabled={enrolling}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white font-bold py-5 px-6 rounded-[24px] transition-all flex items-center justify-center gap-3 shadow-xl shadow-indigo-200 dark:shadow-none hover:-translate-y-1 relative group"
-                  >
-                    {enrolling ? (
-                      <Loader2 size={24} className="animate-spin" />
-                    ) : (
-                      <>
-                        <Award size={20} />
-                        <span>Hemen Kayıt Ol</span>
-                      </>
-                    )}
-                  </button>
-                )}
+                {progress?.completionPercentage === 100 || progress?.isCompleted ? (
+                    <button 
+                      onClick={handleClaimCertificate}
+                      className="w-full bg-emerald-500 hover:bg-emerald-600 border-2 border-emerald-500 hover:border-emerald-600 text-white font-bold py-5 px-6 rounded-[24px] transition-all flex items-center justify-center gap-3 shadow-xl shadow-emerald-200 dark:shadow-none hover:-translate-y-1"
+                    >
+                      <Award size={20} />
+                      Sertifika Al
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => navigate(`/course/${courseId}/lesson/${getNextLessonId()}`)}
+                      className="w-full bg-slate-900 dark:bg-indigo-600 border-2 border-slate-900 dark:border-indigo-600 hover:bg-slate-800 dark:hover:bg-indigo-700 text-white font-bold py-5 px-6 rounded-[24px] transition-all flex items-center justify-center gap-3 shadow-xl hover:-translate-y-1"
+                    >
+                      <Play size={20} fill="currentColor" />
+                      {progress?.completionPercentage === 0 ? 'Eğitime Başla' : 'Derse Devam Et'}
+                    </button>
+                  )}
                 
                 <p className="text-[10px] text-slate-400 dark:text-slate-500 text-center font-bold uppercase tracking-widest">Ömür boyu erişim</p>
               </div>

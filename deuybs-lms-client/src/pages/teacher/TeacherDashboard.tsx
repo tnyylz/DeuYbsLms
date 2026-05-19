@@ -97,19 +97,6 @@ export default function TeacherDashboard() {
             </h1>
             <p className="text-slate-500 dark:text-slate-400 font-medium text-lg">Bugün yeni neler öğretmek istersin?</p>
           </motion.div>
-          
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-          >
-            <Link 
-              to="/teacher/course-builder" 
-              className="group relative bg-indigo-600 hover:bg-indigo-700 transition-all px-8 py-4 rounded-2xl text-sm font-bold text-white flex items-center gap-2 shadow-xl shadow-indigo-600/20 active:scale-95"
-            >
-              <PlusCircle size={20} />
-              <span>Yeni Kurs Hazırla</span>
-            </Link>
-          </motion.div>
         </div>
 
         {/* Stats Grid */}
@@ -217,13 +204,7 @@ export default function TeacherDashboard() {
                 <BookOpen className="text-slate-300 dark:text-slate-700" size={32} />
               </div>
               <h3 className="text-2xl font-black mb-2 text-slate-900 dark:text-slate-100">Henüz Kursun Yok</h3>
-              <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-sm mx-auto font-medium">İlk eğitim içeriğini oluşturarak binlerce öğrenciye ulaşmaya hemen başla.</p>
-              <Link 
-                to="/teacher/course-builder" 
-                className="bg-indigo-600 hover:bg-indigo-700 transition-all px-10 py-4 rounded-2xl text-base font-black text-white inline-flex items-center gap-2 shadow-xl shadow-indigo-600/20"
-              >
-                <PlusCircle size={20} /> İlk Kursunu Oluştur
-              </Link>
+              <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-sm mx-auto font-medium">Sistem yöneticisi tarafından size henüz bir kurs atanmamış.</p>
             </motion.div>
           )}
         </section>

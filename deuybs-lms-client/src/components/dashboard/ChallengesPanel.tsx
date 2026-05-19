@@ -1,7 +1,7 @@
 // Path: src/components/dashboard/ChallengesPanel.tsx
 
 import { useState } from 'react';
-import { Target, Zap, CheckCircle2, Clock, Flame } from 'lucide-react';
+import { Target, Zap, CheckCircle2, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ChallengeDto } from '../../types';
 import { claimChallengeRewardApi } from '../../api/challenge.api';
@@ -60,10 +60,6 @@ export default function ChallengesPanel({ challenges, onRewardClaimed }: Props) 
             <p className="text-[10px] text-slate-400 font-black tracking-widest uppercase mt-1">Limitli Süreli Hedefler</p>
           </div>
         </div>
-        <div className="bg-slate-50 dark:bg-slate-800 px-4 py-2 rounded-2xl border border-slate-100 dark:border-slate-700 flex items-center gap-2">
-           <Clock size={16} className="text-indigo-600 dark:text-indigo-400" />
-           <span className="text-xs font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Haftalık</span>
-        </div>
       </div>
 
       <div className="space-y-4 relative z-10">
@@ -92,9 +88,40 @@ export default function ChallengesPanel({ challenges, onRewardClaimed }: Props) 
                       {challenge.title}
                     </h3>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-4 line-clamp-1">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-3 line-clamp-1">
                     {challenge.description}
                   </p>
+
+                  {/* Kalan Süre */}
+                  {challenge.expiryDate && (
+                    <div className="flex items-center gap-1.5 mb-4">
+                      <Clock size={12} className={
+                        (() => {
+                          const remaining = Math.ceil((new Date(challenge.expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                          return remaining <= 2 ? 'text-red-500' : remaining <= 5 ? 'text-amber-500' : 'text-slate-400';
+                        })()
+                      } />
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${
+                        (() => {
+                          const remaining = Math.ceil((new Date(challenge.expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                          return remaining <= 2 ? 'text-red-500' : remaining <= 5 ? 'text-amber-500' : 'text-slate-400';
+                        })()
+                      }`}>
+                        {(() => {
+                          const remaining = Math.ceil((new Date(challenge.expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+                          if (remaining <= 0) return 'Süre Doldu';
+                          if (remaining === 1) return 'Son 1 Gün!';
+                          return `${remaining} Gün Kaldı`;
+                        })()}
+                      </span>
+                    </div>
+                  )}
+                  {!challenge.expiryDate && (
+                    <div className="flex items-center gap-1.5 mb-4">
+                      <Clock size={12} className="text-slate-300 dark:text-slate-600" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-300 dark:text-slate-600">Süresiz Görev</span>
+                    </div>
+                  )}
                   
                   {/* Progress Bar */}
                   <div className="space-y-2">
@@ -129,17 +156,12 @@ export default function ChallengesPanel({ challenges, onRewardClaimed }: Props) 
                       {claimingId === challenge.id ? '...' : 'AL'}
                     </button>
                   )}
+
                 </div>
               </div>
             </motion.div>
           ))}
         </AnimatePresence>
-      </div>
-
-      <div className="mt-8 pt-8 border-t border-slate-100 dark:border-slate-800 text-center">
-         <p className="text-[10px] text-slate-400 font-black uppercase tracking-widest flex items-center justify-center gap-2">
-            <Flame size={12} className="text-orange-500" /> Yeni görevler yakında geliyor
-         </p>
       </div>
     </section>
   );

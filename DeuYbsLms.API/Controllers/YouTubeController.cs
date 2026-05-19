@@ -6,6 +6,13 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace DeuYbsLms.API.Controllers;
 
+public class UploadVideoRequest
+{
+    public IFormFile File { get; set; } = null!;
+    public string Title { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+}
+
 [ApiController]
 [Route("api/[controller]")]
 [Authorize(Roles = "Teacher")]
@@ -20,8 +27,9 @@ public class YouTubeController : ControllerBase
 
     [HttpPost("upload")]
     [RequestSizeLimit(4294967296)] // 4 GB
-    public async Task<IActionResult> UploadVideo(IFormFile file, [FromForm] string title, [FromForm] string description)
+    public async Task<IActionResult> UploadVideo([FromForm] UploadVideoRequest request)
     {
+        var file = request.File;
         if (file == null || file.Length == 0)
             return BadRequest("Dosya seçilmedi.");
 
@@ -31,7 +39,7 @@ public class YouTubeController : ControllerBase
         try
         {
             using var stream = file.OpenReadStream();
-            var videoId = await _youtubeService.UploadVideoAsync(stream, title, description, file.ContentType);
+            var videoId = await _youtubeService.UploadVideoAsync(stream, request.Title, request.Description, file.ContentType);
             
             return Ok(new { VideoId = videoId, VideoUrl = $"https://www.youtube.com/watch?v={videoId}" });
         }

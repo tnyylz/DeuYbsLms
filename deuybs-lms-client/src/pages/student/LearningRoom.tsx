@@ -155,7 +155,7 @@ export default function LearningRoom() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center space-y-4">
-        <Loader2 className="w-10 h-10 text-indigo-600 animate-spin" />
+        <Loader2 key="main-loader" className="w-10 h-10 text-indigo-600 animate-spin" />
         <p className="text-slate-600 font-medium animate-pulse">Öğrenme odası hazırlanıyor...</p>
       </div>
     );
@@ -306,6 +306,22 @@ export default function LearningRoom() {
                     )}
                   </div>
                   <h2 className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{lesson.title}</h2>
+                  {lesson.description && (
+                    <p className="text-slate-600 dark:text-slate-400 text-sm font-medium leading-relaxed pt-2 max-w-2xl">{lesson.description}</p>
+                  )}
+                  {lesson.resourceUrl && (
+                    <div className="pt-3">
+                      <a 
+                        href={getFileUrl(lesson.resourceUrl)} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="inline-flex items-center gap-2 text-xs font-bold text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300 transition-colors bg-indigo-50 dark:bg-indigo-950/40 px-3.5 py-2 rounded-xl border border-indigo-100 dark:border-indigo-900/50"
+                      >
+                        <FileDown size={14} />
+                        Ders Dokümanını İndir
+                      </a>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap gap-3">
@@ -321,8 +337,14 @@ export default function LearningRoom() {
                             : 'bg-indigo-600 hover:bg-indigo-700 border-indigo-600 text-white shadow-lg shadow-indigo-200 hover:-translate-y-0.5'
                       }`}
                     >
-                      {quizLoading ? <Loader2 size={18} className="animate-spin" /> : <HelpCircle size={18} />}
-                      {quizPassed ? 'Quiz Başarıyla Geçildi' : quizLoading ? 'Hazırlanıyor...' : 'Bilgini Sına: Quiz'}
+                      {quizLoading ? (
+                        <Loader2 key="quiz-loader" size={18} className="animate-spin" />
+                      ) : (
+                        <HelpCircle key="quiz-help" size={18} />
+                      )}
+                      <span>
+                        {quizPassed ? 'Quiz Başarıyla Geçildi' : quizLoading ? 'Hazırlanıyor...' : 'Bilgini Sına: Quiz'}
+                      </span>
                     </button>
                   )}
 

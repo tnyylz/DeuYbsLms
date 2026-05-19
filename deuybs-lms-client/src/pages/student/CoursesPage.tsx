@@ -13,10 +13,8 @@ import { motion } from 'framer-motion';
 export default function CoursesPage() {
   const navigate = useNavigate();
   const [courses, setCourses] = useState<CourseDto[]>([]);
-  const [enrollments, setEnrollments] = useState<EnrollmentDto[]>([]);
   const [filtered, setFiltered] = useState<CourseDto[]>([]);
   const [search, setSearch] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'enrolled' | 'not-enrolled'>('all');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,9 +24,13 @@ export default function CoursesPage() {
           getCoursesApi(),
           getMyEnrollmentsApi()
         ]);
-        setCourses(coursesData);
-        setEnrollments(enrollmentsData);
-        setFiltered(coursesData);
+        
+        // Sadece kayıtlı (atanmış) kursları filtrele
+        const enrolledCourseIds = new Set(enrollmentsData.map(e => e.courseId));
+        const assignedCourses = coursesData.filter(c => enrolledCourseIds.has(c.id));
+        
+        setCourses(assignedCourses);
+        setFiltered(assignedCourses);
       } catch (err) { 
         console.error("Veri çekme hatası:", err); 
       } finally { 
@@ -38,20 +40,16 @@ export default function CoursesPage() {
     fetchData();
   }, []);
 
-
-
-  // ... (existing logic for filtering, duration formatting, etc.)
   useEffect(() => {
     const q = search.toLowerCase();
     setFiltered(courses.filter(c => 
       c.title.toLowerCase().includes(q) || 
       c.description.toLowerCase().includes(q) ||
-      c.teacherName.toLowerCase().includes(q) ||
-      (c.tags && c.tags.some(tag => tag.toLowerCase().includes(q)))
+      c.teacherName.toLowerCase().includes(q)
     ));
   }, [search, courses]);
 
-  const isEnrolled = (courseId: string) => enrollments.some(e => e.courseId === courseId);
+  // ... (existing logic for duration formatting, etc.)
 
   const levelLabel = (level: string) => {
     const l = level.toLowerCase();
@@ -108,61 +106,32 @@ export default function CoursesPage() {
 
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="mb-10 text-center md:text-left">
-          <h1 className="text-4xl font-extrabold mb-3 text-slate-900 dark:text-white tracking-tight">Kurs Kataloğu</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-lg">Yeteneklerinizi geliştirmek için tasarlanmış eğitim programlarını keşfedin.</p>
+          <h1 className="text-4xl font-extrabold mb-3 text-slate-900 dark:text-white tracking-tight">Atanan Kurslarım</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-lg">Yöneticiler tarafından size atanan eğitim içerikleri burada listelenir.</p>
         </div>
 
-        <div className="relative mb-8 group">
+        <div className="relative mb-12 group">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors" size={20} />
           <input 
             type="text" 
-            placeholder="Kurs başlığı, eğitmen veya içerik ara..." 
+            placeholder="Atanan kurslar içinde ara..." 
             value={search} 
             onChange={e => setSearch(e.target.value)} 
             className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl pl-12 pr-4 py-4 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all font-medium text-lg shadow-sm" 
           />
         </div>
 
-        {/* Enrollment Filters */}
-        <div className="flex flex-wrap items-center gap-3 mb-12">
-          <button 
-            onClick={() => setFilterStatus('all')}
-            className={`px-6 py-2.5 rounded-full text-xs font-black transition-all border-2 ${filterStatus === 'all' ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none translate-y-[-2px]' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 hover:border-indigo-400'}`}
-          >
-            TÜM KURSLAR
-          </button>
-          <button 
-            onClick={() => setFilterStatus('enrolled')}
-            className={`px-6 py-2.5 rounded-full text-xs font-black transition-all border-2 flex items-center gap-2 ${filterStatus === 'enrolled' ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-200 dark:shadow-none translate-y-[-2px]' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 hover:border-emerald-400'}`}
-          >
-            <PlayCircle size={14} fill={filterStatus === 'enrolled' ? 'currentColor' : 'none'} />
-            KAYITLI OLDUKLARIM
-          </button>
-          <button 
-            onClick={() => setFilterStatus('not-enrolled')}
-            className={`px-6 py-2.5 rounded-full text-xs font-black transition-all border-2 ${filterStatus === 'not-enrolled' ? 'bg-slate-700 border-slate-700 text-white shadow-lg translate-y-[-2px]' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-500 hover:border-slate-400'}`}
-          >
-            KAYITLI OLMADIKLARIM
-          </button>
-        </div>
-
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filtered.map((course, idx) => {
             const level = levelLabel(course.level);
-            const enrolled = isEnrolled(course.id);
-            
-            // Enrollment Filter Logic (Highlight/Dim)
-            const isMatch = filterStatus === 'all' 
-              || (filterStatus === 'enrolled' && enrolled)
-              || (filterStatus === 'not-enrolled' && !enrolled);
 
             return (
               <motion.div 
                 key={course.id} 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ 
-                  opacity: isMatch ? 1 : 0.35, 
-                  scale: isMatch ? 1 : 0.96,
+                  opacity: 1, 
+                  scale: 1,
                   y: 0 
                 }}
                 transition={{ 
@@ -171,7 +140,7 @@ export default function CoursesPage() {
                   delay: idx * 0.05 
                 }}
                 onClick={() => navigate(`/course/${course.id}/detail`)}
-                className={`bg-white dark:bg-slate-900 border rounded-3xl overflow-hidden hover:shadow-2xl transition-all duration-500 flex flex-col group cursor-pointer shadow-sm shadow-slate-200/50 dark:shadow-none ${!isMatch ? 'grayscale-[0.5] filter pointer-events-none' : 'border-slate-200 dark:border-slate-800 dark:hover:border-indigo-500'}`}
+                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden hover:shadow-2xl transition-all duration-500 flex flex-col group cursor-pointer shadow-sm shadow-slate-200/50 dark:shadow-none dark:hover:border-indigo-500"
               >
                 {/* Image Section */}
                 <div className="relative h-48 overflow-hidden bg-slate-100">
@@ -191,13 +160,11 @@ export default function CoursesPage() {
                       {level.label}
                     </span>
                   </div>
-                  {enrolled && (
-                    <div className="absolute top-4 right-4 animate-in fade-in zoom-in duration-300">
-                      <span className="bg-emerald-500 text-white text-[10px] px-2.5 py-1 rounded-lg font-bold uppercase tracking-wider shadow-lg flex items-center gap-1">
-                        <PlayCircle size={10} fill="currentColor" /> Kayıtlı
-                      </span>
-                    </div>
-                  )}
+                  <div className="absolute top-4 right-4 animate-in fade-in zoom-in duration-300">
+                    <span className="bg-emerald-500 text-white text-[10px] px-2.5 py-1 rounded-lg font-bold uppercase tracking-wider shadow-lg flex items-center gap-1">
+                      <PlayCircle size={10} fill="currentColor" /> Atandı
+                    </span>
+                  </div>
                 </div>
 
                 <div className="p-6 flex flex-col flex-1">
@@ -227,8 +194,8 @@ export default function CoursesPage() {
                       <span className="flex items-center gap-1.5"><Clock size={14} className="text-slate-300 dark:text-slate-700" /> {formatDuration(course.totalDurationInSeconds)}</span>
                     </div>
 
-                    <div className={`p-2 rounded-xl transition-all duration-300 ${enrolled ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white' : 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white'}`}>
-                      {enrolled ? <PlayCircle size={20} /> : <ChevronLeft size={20} className="rotate-180" />}
+                    <div className="p-2 rounded-xl transition-all duration-300 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500 group-hover:text-white">
+                      <PlayCircle size={20} />
                     </div>
                   </div>
                 </div>

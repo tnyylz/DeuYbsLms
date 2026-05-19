@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Application/Interfaces/Repositories/IUserRepository.cs
+// Path: DeuYbsLms.Application/Interfaces/Repositories/IUserRepository.cs
 
 using DeuYbsLms.Domain.Entities.Identity;
 
@@ -8,5 +8,6 @@ public interface IUserRepository : IRepository<AppUser>
 {
     Task<AppUser?> GetByEmailAsync(string email);
     Task<AppUser?> GetUserWithProfileAsync(Guid userId);
+    Task<List<AppUser>> GetAllWithProfileAsync();
     Task<bool> IsEmailTakenAsync(string email);
 }

@@ -18,6 +18,7 @@ export interface RegisterRequest {
   email: string;
   password: string;
   studentNumber: string;
+  gradeLevel?: number;
 }
 
 export interface AuthResponse {
@@ -289,6 +290,11 @@ export interface TeacherCourseDto {
   isPublished: boolean;
 }
 
+export interface AdminCourseAssignmentDto {
+  gradeLevel?: number;
+  studentNumbers?: string[];
+}
+
 export interface StudentProfileDto {
   id: string;
   firstName: string;
@@ -304,6 +310,7 @@ export interface StudentProfileDto {
   coursesCompletedCount: number;
   totalCertificatesCount: number;
   badges: BadgeDto[];
+  gradeLevel: number;
 }
 
 export interface UpdateProfileRequest {
@@ -337,14 +344,15 @@ export interface CreateCourseRequest {
   thumbnailUrl?: string;
   isPublished?: boolean;
   tags?: string[];
+  teacherId: string;
 }
 
 export interface CreateLessonRequest {
   title: string;
   description?: string;
-  videoUrl?: string;
-  textContent?: string;
-  resourceUrl?: string;
+  videoUrl?: string | null;
+  textContent?: string | null;
+  resourceUrl?: string | null;
   durationInSeconds: number;
   xpReward: number;
   orderIndex: number;

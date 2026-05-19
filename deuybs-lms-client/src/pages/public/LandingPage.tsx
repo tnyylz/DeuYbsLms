@@ -20,11 +20,8 @@ export default function LandingPage() {
           <div className="flex items-center gap-4">
             <ThemeToggle />
             <div className="h-6 w-px bg-slate-200 dark:bg-slate-800 mx-2 hidden sm:block" />
-            <Link to="/login" className="text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 font-semibold transition-colors text-sm px-4 py-2">
+            <Link to="/login" className="bg-indigo-600 hover:bg-indigo-700 text-white transition-all shadow-md hover:shadow-lg px-5 py-2.5 rounded-xl text-sm font-bold">
               Giriş Yap
-            </Link>
-            <Link to="/register" className="bg-indigo-600 hover:bg-indigo-700 text-white transition-all shadow-md hover:shadow-lg px-5 py-2.5 rounded-xl text-sm font-bold">
-              Ücretsiz Kayıt Ol
             </Link>
           </div>
         </div>
@@ -47,11 +44,8 @@ export default function LandingPage() {
         </p>
         
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Link to="/register" className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white transition-all shadow-lg hover:-translate-y-1 px-8 py-4 rounded-xl font-bold flex items-center justify-center gap-2 text-lg">
-            Hemen Başla <ChevronRight size={20} />
-          </Link>
-          <Link to="/login" className="w-full sm:w-auto bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-all px-8 py-4 rounded-xl font-bold flex items-center justify-center text-lg shadow-sm">
-            Giriş Yap
+          <Link to="/login" className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white transition-all shadow-lg hover:-translate-y-1 px-8 py-4 rounded-xl font-bold flex items-center justify-center gap-2 text-lg">
+            Giriş Yap <ChevronRight size={20} />
           </Link>
         </div>
       </section>

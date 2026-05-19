@@ -14,15 +14,18 @@ public class AdminController : ControllerBase
     private readonly IAdminService _adminService;
     private readonly IChallengeService _challengeService;
     private readonly IShopService _shopService;
+    private readonly IAuthService _authService;
 
     public AdminController(
         IAdminService adminService, 
         IChallengeService challengeService,
-        IShopService shopService)
+        IShopService shopService,
+        IAuthService authService)
     {
         _adminService = adminService;
         _challengeService = challengeService;
         _shopService = shopService;
+        _authService = authService;
     }
 
     [HttpGet("dashboard-stats")]
@@ -37,6 +40,22 @@ public class AdminController : ControllerBase
     {
         var users = await _adminService.GetAllUsersAsync();
         return Ok(users);
+    }
+
+    [HttpPost("users")]
+    public async Task<IActionResult> CreateUser([FromBody] DeuYbsLms.Application.DTOs.Auth.RegisterRequestDto request)
+    {
+        try
+        {
+            var result = await _authService.CreateUserAsync(request);
+            if (!result.IsSuccess)
+                return BadRequest(new { errorMessage = result.ErrorMessage });
+            return Ok(new { id = result.Data, message = "Kullanıcı başarıyla oluşturuldu." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { errorMessage = "Sunucu tarafında bir hata oluştu.", details = ex.Message });
+        }
     }
 
     [HttpGet("users/{id}")]
@@ -95,6 +114,20 @@ public class AdminController : ControllerBase
         {
             await _adminService.DeleteCourseAsync(courseId);
             return Ok(new { message = "Kurs başarıyla silindi." });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPost("courses/{courseId:guid}/assign")]
+    public async Task<IActionResult> AssignCourse(Guid courseId, [FromBody] CourseAssignmentDto request)
+    {
+        try
+        {
+            await _adminService.AssignCourseAsync(courseId, request);
+            return Ok(new { message = "Öğrenciler kursa başarıyla atandı." });
         }
         catch (Exception ex)
         {

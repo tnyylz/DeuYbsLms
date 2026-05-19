@@ -45,11 +45,21 @@ public class YouTubeService : IYouTubeService
         var tokenResponse = new TokenResponse { RefreshToken = refreshToken };
         var credential = new UserCredential(flow, "user", tokenResponse);
 
+        // Varsayılan 100 saniyelik timeout büyük videolar için yetersiz.
+        // 30 dakikalık timeout ile özel bir HttpClient oluştur.
+        var httpClient = new System.Net.Http.HttpClient()
+        {
+            Timeout = TimeSpan.FromMinutes(30)
+        };
+
         var youtubeService = new Google.Apis.YouTube.v3.YouTubeService(new BaseClientService.Initializer()
         {
             HttpClientInitializer = credential,
             ApplicationName = "DeuYbsLms"
         });
+
+        // YouTube servisinin HttpClient timeout'unu güncelle
+        youtubeService.HttpClient.Timeout = TimeSpan.FromMinutes(30);
 
         var video = new Video
         {

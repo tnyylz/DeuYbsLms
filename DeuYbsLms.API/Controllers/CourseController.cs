@@ -4,8 +4,10 @@
 using AutoMapper;
 using DeuYbsLms.Application.DTOs.Course;
 using DeuYbsLms.Application.Interfaces.Repositories;
+using DeuYbsLms.Domain.Entities.Course;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace DeuYbsLms.API.Controllers;
 
@@ -14,11 +16,13 @@ namespace DeuYbsLms.API.Controllers;
 public class CourseController : ControllerBase
 {
     private readonly ICourseRepository _courseRepository;
+    private readonly ILessonRepository _lessonRepository;
     private readonly IMapper _mapper;
 
-    public CourseController(ICourseRepository courseRepository, IMapper mapper)
+    public CourseController(ICourseRepository courseRepository, ILessonRepository lessonRepository, IMapper mapper)
     {
         _courseRepository = courseRepository;
+        _lessonRepository = lessonRepository;
         _mapper = mapper;
     }
 
@@ -40,14 +44,13 @@ public class CourseController : ControllerBase
         return Ok(result);
     }
 
-    [Authorize(Roles = "Teacher")]
+    [Authorize(Roles = "Admin")]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] CreateCourseDto request)
     {
-        var teacherId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
         var course = _mapper.Map<DeuYbsLms.Domain.Entities.Course.Course>(request);
         course.Id = Guid.NewGuid();
-        course.TeacherId = teacherId;
+        course.TeacherId = request.TeacherId;
         course.CreatedAt = DateTime.UtcNow;
 
         // Tags mapping
@@ -72,10 +75,20 @@ public class CourseController : ControllerBase
         var course = await _courseRepository.GetCourseWithDetailsAsync(id);
         if (course is null) return NotFound("Kurs bulunamadı.");
 
-        var teacherId = Guid.Parse(User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)!.Value);
+        var teacherIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (string.IsNullOrEmpty(teacherIdStr)) return Unauthorized();
+        var teacherId = Guid.Parse(teacherIdStr);
+        
         if (course.TeacherId != teacherId) return Forbid();
 
+        // Preserve critical fields
+        var originalTeacherId = course.TeacherId;
+        var originalCreatedAt = course.CreatedAt;
+
         _mapper.Map(request, course);
+        
+        course.TeacherId = originalTeacherId;
+        course.CreatedAt = originalCreatedAt;
         course.UpdatedAt = DateTime.UtcNow;
 
         // Tags update logic: soft delete missing, resurrect/add new
@@ -115,14 +128,12 @@ public class CourseController : ControllerBase
         var course = await _courseRepository.GetByIdAsync(courseId);
         if (course == null) return NotFound("Kurs bulunamadı.");
 
-        var lesson = _mapper.Map<DeuYbsLms.Domain.Entities.Course.Lesson>(request);
+        var lesson = _mapper.Map<Lesson>(request);
         lesson.Id = Guid.NewGuid();
         lesson.CourseId = courseId;
         lesson.CreatedAt = DateTime.UtcNow;
 
-        // LessonRepository injected via ICourseRepository? No, I should inject ILessonRepository.
-        // Wait, I can just add it to course and update course if they are related. 
-        // But better to use ILessonRepository.
+        await _lessonRepository.AddAsync(lesson);
         return Ok(lesson.Id);
     }
 }

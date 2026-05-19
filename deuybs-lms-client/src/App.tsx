@@ -6,7 +6,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 // Public
 import LandingPage from './pages/public/LandingPage';
 import LoginPage from './pages/public/LoginPage';
-import RegisterPage from './pages/public/RegisterPage';
 
 // Student
 import StudentDashboard from './pages/student/StudentDashboard';
@@ -24,7 +23,6 @@ import LearningKanban from './pages/student/LearningKanban';
 
 // Teacher
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
-import CourseBuilder from './pages/teacher/CourseBuilder';
 import TeacherLearningPathsPage from './pages/teacher/TeacherLearningPathsPage';
 import LearningPathBuilderPage from './pages/teacher/LearningPathBuilderPage';
 import TeacherCourseDetailPage from './pages/teacher/TeacherCourseDetailPage';
@@ -52,7 +50,6 @@ export default function App() {
         {/* Public */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
 
         {/* Student */}
         <Route path="/student/dashboard" element={<ProtectedRoute role="Student"><StudentDashboard /></ProtectedRoute>} />
@@ -70,7 +67,6 @@ export default function App() {
 
         {/* Teacher */}
         <Route path="/teacher/dashboard" element={<ProtectedRoute role="Teacher"><TeacherDashboard /></ProtectedRoute>} />
-        <Route path="/teacher/course-builder" element={<ProtectedRoute role="Teacher"><CourseBuilder /></ProtectedRoute>} />
         <Route path="/teacher/learning-paths" element={<ProtectedRoute role="Teacher"><TeacherLearningPathsPage /></ProtectedRoute>} />
         <Route path="/teacher/learning-path-builder" element={<ProtectedRoute role="Teacher"><LearningPathBuilderPage /></ProtectedRoute>} />
         <Route path="/teacher/learning-path-builder/:id" element={<ProtectedRoute role="Teacher"><LearningPathBuilderPage /></ProtectedRoute>} />

@@ -33,8 +33,9 @@ export default function StudentDashboard() {
   const [viewMode, setViewMode] = useState<'grid' | 'galaxy'>('grid');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const getLeagueColor = (tier: string = 'DEMİR') => {
-    switch (tier.toLowerCase()) {
+  const getLeagueColor = (tier?: string | null) => {
+    const safeTier = tier || 'DEMİR';
+    switch (safeTier.toLowerCase()) {
       case 'demir': case 'iron': return 'from-slate-400 to-slate-600';
       case 'bronz': case 'bronze': return 'from-orange-500 to-orange-800';
       case 'gümüş': case 'silver': return 'from-gray-300 to-gray-500';

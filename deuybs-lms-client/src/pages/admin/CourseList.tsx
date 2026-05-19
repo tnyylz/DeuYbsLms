@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Trash2, Search, BookOpen, Clock, X, Layout, PlayCircle, Star, GraduationCap } from 'lucide-react';
-import { adminApi, type AdminCourse } from '../../api/admin';
-import { getCourseDetailApi } from '../../api/courses.api';
-import type { CourseDetailDto } from '../../types';
+import { createCourseApi, getCourseDetailApi } from '../../api/courses.api';
+import type { CourseDetailDto, CreateCourseRequest } from '../../types';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { adminApi, type AdminCourse, type AdminUser } from '../../api/admin';
 
 export default function CourseList() {
   const [courses, setCourses] = useState<AdminCourse[]>([]);
@@ -12,6 +12,27 @@ export default function CourseList() {
   const [selectedCourseDetail, setSelectedCourseDetail] = useState<CourseDetailDto | null>(null);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
+  const [teachers, setTeachers] = useState<AdminUser[]>([]);
+  const [isCreatingCourse, setIsCreatingCourse] = useState(false);
+
+  // Assign Student State
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [assignCourseId, setAssignCourseId] = useState<string | null>(null);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [assignForm, setAssignForm] = useState<{ gradeLevel: number; studentNumbers: string }>({
+    gradeLevel: 0,
+    studentNumbers: ''
+  });
+  
+  const [newCourseForm, setNewCourseForm] = useState<CreateCourseRequest>({
+    title: '',
+    description: '',
+    level: '1',
+    totalXpReward: 500,
+    isPublished: false,
+    teacherId: ''
+  });
   
   // Pagination & Filtering state
   const [searchTerm, setSearchTerm] = useState('');
@@ -61,6 +82,76 @@ export default function CourseList() {
     }
   };
 
+  const handleOpenAddCourseModal = async () => {
+    setIsAddCourseModalOpen(true);
+    try {
+      const users = await adminApi.getAllUsers();
+      // Role is either 'Teacher' or 2
+      const teacherList = users.filter(u => u.role === 'Teacher' || u.role === 2);
+      setTeachers(teacherList);
+    } catch {
+      toast.error('Eğitmenler yüklenemedi.');
+    }
+  };
+
+  const handleCreateCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCourseForm.teacherId) {
+      toast.error('Lütfen bir eğitmen seçin.');
+      return;
+    }
+    try {
+      setIsCreatingCourse(true);
+      await createCourseApi(newCourseForm);
+      toast.success('Kurs başarıyla oluşturuldu.');
+      setIsAddCourseModalOpen(false);
+      setNewCourseForm({
+        title: '',
+        description: '',
+        level: '1',
+        totalXpReward: 500,
+        isPublished: false,
+        teacherId: ''
+      });
+      fetchCourses();
+    } catch {
+      toast.error('Kurs oluşturulurken bir hata oluştu.');
+    } finally {
+      setIsCreatingCourse(false);
+    }
+  };
+
+  const handleOpenAssignModal = (courseId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setAssignCourseId(courseId);
+    setAssignForm({ gradeLevel: 0, studentNumbers: '' });
+    setIsAssignModalOpen(true);
+  };
+
+  const handleAssignCourse = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!assignCourseId) return;
+
+    try {
+      setIsAssigning(true);
+      const studentNumbersArray = assignForm.studentNumbers
+        .split(',')
+        .map(n => n.trim())
+        .filter(n => n.length > 0);
+
+      await adminApi.assignCourse(assignCourseId, {
+        gradeLevel: assignForm.gradeLevel === 0 ? undefined : assignForm.gradeLevel,
+        studentNumbers: studentNumbersArray.length > 0 ? studentNumbersArray : undefined
+      });
+      toast.success('Öğrenciler kursa başarıyla atandı.');
+      setIsAssignModalOpen(false);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Atama işlemi başarısız.');
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
   const getLevelLabel = (level: number) => {
       switch(level) {
           case 1: return { text: 'Başlangıç', color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' };
@@ -88,15 +179,23 @@ export default function CourseList() {
             <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Platformdaki eğitim içeriklerini görüntüleyin ve denetleyin.</p>
         </div>
         
-        <div className="relative w-full sm:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input 
-                type="text" 
-                placeholder="Kurs veya Eğitmen ara..." 
-                className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all shadow-sm dark:text-white"
-                value={searchTerm}
-                onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-            />
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="relative w-full sm:w-72">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <input 
+                    type="text" 
+                    placeholder="Kurs veya Eğitmen ara..." 
+                    className="w-full pl-10 pr-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all shadow-sm dark:text-white"
+                    value={searchTerm}
+                    onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                />
+            </div>
+            <button 
+                onClick={handleOpenAddCourseModal}
+                className="w-full sm:w-auto px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-medium transition-colors whitespace-nowrap shadow-sm"
+            >
+                + Yeni Kurs Ekle
+            </button>
         </div>
       </div>
 
@@ -119,13 +218,22 @@ export default function CourseList() {
                                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${levelData.color}`}>
                                     {levelData.text}
                                 </span>
-                                <button 
-                                    onClick={(e) => handleDelete(course.id, e)}
-                                    className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                                    title="Kursu Sil"
-                                >
-                                    <Trash2 className="w-5 h-5" />
-                                </button>
+                                <div className="flex opacity-0 group-hover:opacity-100 transition-all">
+                                    <button 
+                                        onClick={(e) => handleOpenAssignModal(course.id, e)}
+                                        className="p-2 text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all"
+                                        title="Öğrenci Ata"
+                                    >
+                                        <GraduationCap className="w-5 h-5" />
+                                    </button>
+                                    <button 
+                                        onClick={(e) => handleDelete(course.id, e)}
+                                        className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
+                                        title="Kursu Sil"
+                                    >
+                                        <Trash2 className="w-5 h-5" />
+                                    </button>
+                                </div>
                             </div>
                             
                             <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2">{course.title}</h4>
@@ -327,6 +435,145 @@ export default function CourseList() {
                   className="px-8 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-[1.25rem] font-black text-sm hover:scale-105 transition-all shadow-xl active:scale-95 cursor-pointer"
                 >
                   Kapat
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Add Course Modal */}
+        {isAddCourseModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white dark:bg-gray-800 w-full max-w-lg overflow-hidden rounded-[2rem] shadow-2xl border border-gray-100 dark:border-gray-700 flex flex-col max-h-[90vh]"
+            >
+              <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 shrink-0">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Yeni Kurs Ekle</h2>
+                <button 
+                  onClick={() => setIsAddCourseModalOpen(false)}
+                  className="p-2 hover:bg-white dark:hover:bg-gray-700 rounded-xl transition-colors cursor-pointer"
+                >
+                  <X className="w-6 h-6 text-gray-400" />
+                </button>
+              </div>
+
+              <div className="overflow-y-auto">
+                <form id="createCourseForm" onSubmit={handleCreateCourse} className="p-6 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kurs Başlığı</label>
+                    <input type="text" required value={newCourseForm.title} onChange={e => setNewCourseForm({...newCourseForm, title: e.target.value})} className="w-full p-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none dark:text-white" />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Açıklama</label>
+                    <textarea required rows={3} value={newCourseForm.description} onChange={e => setNewCourseForm({...newCourseForm, description: e.target.value})} className="w-full p-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none dark:text-white" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Seviye</label>
+                      <select value={newCourseForm.level} onChange={e => setNewCourseForm({...newCourseForm, level: e.target.value})} className="w-full p-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none dark:text-white">
+                        <option value="1">Başlangıç</option>
+                        <option value="2">Orta</option>
+                        <option value="3">İleri</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">XP Ödülü</label>
+                      <input type="number" required value={newCourseForm.totalXpReward} onChange={e => setNewCourseForm({...newCourseForm, totalXpReward: parseInt(e.target.value)})} className="w-full p-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none dark:text-white" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Eğitmen Ata</label>
+                    <select required value={newCourseForm.teacherId} onChange={e => setNewCourseForm({...newCourseForm, teacherId: e.target.value})} className="w-full p-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none dark:text-white">
+                      <option value="">Eğitmen Seçiniz</option>
+                      {teachers.map(teacher => (
+                        <option key={teacher.id} value={teacher.id}>{teacher.firstName} {teacher.lastName}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-2">
+                    <input type="checkbox" id="isPublished" checked={newCourseForm.isPublished} onChange={e => setNewCourseForm({...newCourseForm, isPublished: e.target.checked})} className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500" />
+                    <label htmlFor="isPublished" className="text-sm font-medium text-gray-700 dark:text-gray-300">Taslaktan Çıkar (Hemen Yayınla)</label>
+                  </div>
+                </form>
+              </div>
+
+              <div className="p-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex justify-end gap-3 shrink-0">
+                <button type="button" onClick={() => setIsAddCourseModalOpen(false)} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">İptal</button>
+                <button type="submit" form="createCourseForm" disabled={isCreatingCourse} className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-medium transition-colors disabled:opacity-50">
+                  {isCreatingCourse ? 'Oluşturuluyor...' : 'Kursu Oluştur'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+
+        {/* Assign Student Modal */}
+        {isAssignModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white dark:bg-gray-800 w-full max-w-md overflow-hidden rounded-[2rem] shadow-2xl border border-gray-100 dark:border-gray-700 flex flex-col"
+            >
+              <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 shrink-0">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Kursa Öğrenci Ata</h2>
+                <button 
+                  onClick={() => setIsAssignModalOpen(false)}
+                  className="p-2 hover:bg-white dark:hover:bg-gray-700 rounded-xl transition-colors cursor-pointer"
+                >
+                  <X className="w-6 h-6 text-gray-400" />
+                </button>
+              </div>
+
+              <div className="p-6">
+                <form id="assignCourseForm" onSubmit={handleAssignCourse} className="space-y-4">
+                  <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800/50 mb-6">
+                    <p className="text-sm text-blue-800 dark:text-blue-300">
+                      Öğrencileri sınıfa göre toplu olarak atayabilir veya numaralarını yazarak tekil atama yapabilirsiniz.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Toplu Atama (Sınıf)</label>
+                    <select 
+                      value={assignForm.gradeLevel} 
+                      onChange={e => setAssignForm({...assignForm, gradeLevel: parseInt(e.target.value)})} 
+                      className="w-full p-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none dark:text-white"
+                    >
+                      <option value={0}>Seçilmedi</option>
+                      <option value={1}>1. Sınıflar</option>
+                      <option value={2}>2. Sınıflar</option>
+                      <option value={3}>3. Sınıflar</option>
+                      <option value={4}>4. Sınıflar</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Spesifik Öğrenciler (Numara)</label>
+                    <textarea 
+                      rows={3} 
+                      placeholder="Örn: 2021001, 2021002"
+                      value={assignForm.studentNumbers} 
+                      onChange={e => setAssignForm({...assignForm, studentNumbers: e.target.value})} 
+                      className="w-full p-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none dark:text-white text-sm" 
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Birden fazla öğrenci numarası için virgülle ayırın.</p>
+                  </div>
+                </form>
+              </div>
+
+              <div className="p-4 border-t border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex justify-end gap-3 shrink-0">
+                <button type="button" onClick={() => setIsAssignModalOpen(false)} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">İptal</button>
+                <button type="submit" form="assignCourseForm" disabled={isAssigning || (assignForm.gradeLevel === 0 && assignForm.studentNumbers.trim() === '')} className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-medium transition-colors disabled:opacity-50">
+                  {isAssigning ? 'Atanıyor...' : 'Ata'}
                 </button>
               </div>
             </motion.div>

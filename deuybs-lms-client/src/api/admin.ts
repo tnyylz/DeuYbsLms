@@ -1,4 +1,5 @@
 import api from './axiosInstance';
+import type { AdminCourseAssignmentDto } from '../types';
 
 export interface MonthlyRegistration {
   month: string;
@@ -20,7 +21,15 @@ export interface AdminDashboardStats {
   totalUsers: number;
   totalCourses: number;
   totalEnrollments: number;
+  totalStudents: number;
+  totalTeachers: number;
+  totalCompletedEnrollments: number;
   monthlyRegistrations: MonthlyRegistration[];
+  monthlyEnrollments: MonthlyRegistration[];
+  monthlyCompletedLessons: MonthlyRegistration[];
+  monthlyCertificates: MonthlyRegistration[];
+  leagueDistributions: { leagueName: string, studentCount: number }[];
+  studentLeaderboard: { fullName: string, totalXp: number, level: number, league: string }[];
   topCourses: AdminTopCourse[];
   recentActivities: AdminRecentActivity[];
 }
@@ -70,6 +79,10 @@ export const adminApi = {
   getAllUsers: async (): Promise<AdminUser[]> => {
     const response = await api.get('/Admin/users');
     return response.data;
+  },
+
+  createUser: async (data: any): Promise<void> => {
+    await api.post('/Admin/users', data);
   },
 
   getUserDetail: async (userId: string): Promise<AdminUserDetail> => {
@@ -132,5 +145,9 @@ export const adminApi = {
 
   deleteShopItem: async (id: string): Promise<void> => {
     await api.delete(`/Admin/shop-items/${id}`);
+  },
+
+  assignCourse: async (courseId: string, data: AdminCourseAssignmentDto): Promise<void> => {
+    await api.post(`/Admin/courses/${courseId}/assign`, data);
   }
 };

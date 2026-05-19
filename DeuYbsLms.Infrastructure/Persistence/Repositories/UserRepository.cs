@@ -1,4 +1,4 @@
-﻿// Path: DeuYbsLms.Infrastructure/Persistence/Repositories/UserRepository.cs
+// Path: DeuYbsLms.Infrastructure/Persistence/Repositories/UserRepository.cs
 
 using DeuYbsLms.Application.Interfaces.Repositories;
 using DeuYbsLms.Domain.Entities.Identity;
@@ -22,6 +22,11 @@ public class UserRepository : Repository<AppUser>, IUserRepository
             .Include(u => u.StudentProfile)
                 .ThenInclude(sp => sp!.XpTransactions)
             .FirstOrDefaultAsync(u => u.Id == userId);
+
+    public async Task<List<AppUser>> GetAllWithProfileAsync()
+        => await _context.Users
+            .Include(u => u.StudentProfile)
+            .ToListAsync();
 
     public async Task<bool> IsEmailTakenAsync(string email)
         => await _context.Users.AnyAsync(u => u.Email == email.ToLower());

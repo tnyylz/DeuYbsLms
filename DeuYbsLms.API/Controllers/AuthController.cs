@@ -20,22 +20,6 @@ public class AuthController : ControllerBase
         _authService = authService;
     }
 
-    [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
-    {
-        try
-        {
-            var result = await _authService.RegisterAsync(request);
-            if (!result.IsSuccess)
-                return BadRequest(new { errorMessage = result.ErrorMessage });
-            return Ok(result.Data);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { errorMessage = "Sunucu tarafında bir hata oluştu.", details = ex.Message });
-        }
-    }
-
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
     {

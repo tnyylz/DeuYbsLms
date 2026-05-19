@@ -98,16 +98,15 @@ export default function LoginPage() {
             
             <div className="pt-2">
               <button type="submit" disabled={loading} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50 disabled:cursor-not-allowed transition-all py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 shadow-md hover:shadow-lg cursor-pointer">
-                {loading && <Loader2 size={18} className="animate-spin" />}
-                {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
+                {loading && <Loader2 key="login-loader" size={18} className="animate-spin" />}
+                <span>{loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}</span>
               </button>
             </div>
           </form>
         </div>
 
         <p className="text-center text-slate-500 dark:text-slate-400 text-sm mt-8 font-medium">
-          Daha sisteme katılmadın mı?{' '}
-          <Link to="/register" className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors font-bold underline underline-offset-4">Hemen Kayıt Ol</Link>
+          Hesabınız yoksa yöneticinizle iletişime geçin.
         </p>
       </div>
     </div>

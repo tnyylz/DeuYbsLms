@@ -6,6 +6,7 @@ using DeuYbsLms.Application.DTOs.Gamification;
 using DeuYbsLms.Application.Interfaces.Repositories;
 using DeuYbsLms.Application.Interfaces.Services;
 using DeuYbsLms.Domain.Entities.Progress;
+using DeuYbsLms.Domain.Enums;
 
 namespace DeuYbsLms.Infrastructure.Services;
 
@@ -15,17 +16,20 @@ public class ProgressService : IProgressService
     private readonly IProgressRepository _progressRepository;
     private readonly ILessonRepository _lessonRepository;
     private readonly IGamificationService _gamificationService;
+    private readonly IChallengeService _challengeService;
 
     public ProgressService(
         IEnrollmentRepository enrollmentRepository,
         IProgressRepository progressRepository,
         ILessonRepository lessonRepository,
-        IGamificationService gamificationService)
+        IGamificationService gamificationService,
+        IChallengeService challengeService)
     {
         _enrollmentRepository = enrollmentRepository;
         _progressRepository = progressRepository;
         _lessonRepository = lessonRepository;
         _gamificationService = gamificationService;
+        _challengeService = challengeService;
     }
 
     public async Task<Result<CourseProgressDto>> GetCourseProgressAsync(Guid studentId, Guid courseId)
@@ -165,6 +169,9 @@ public class ProgressService : IProgressService
 
             var xpResult = await _gamificationService.AwardXpAsync(studentId, lesson.XpReward, $"Video tamamlandı: {lesson.Title}");
 
+            // Görev ilerleme: Ders tamamlama
+            await _challengeService.UpdateChallengeProgressAsync(studentId, ChallengeType.LessonCompletion, 1);
+
             var dto = MapToDto(progress, lesson.Title, lesson.OrderIndex);
             dto.XpResult = xpResult;
             return Result<LessonProgressDto>.Success(dto);
@@ -240,6 +247,9 @@ public class ProgressService : IProgressService
             await UnlockNextLessonAsync(enrollment, lesson.Id);
 
             xpResult = await _gamificationService.AwardXpAsync(studentId, lesson.XpReward, $"Quiz geçildi: {lesson.Title}");
+
+            // Görev ilerleme: Quiz başarısı
+            await _challengeService.UpdateChallengeProgressAsync(studentId, ChallengeType.QuizSuccess, 1);
         }
 
         await _progressRepository.UpdateAsync(progress); // önce DB'ye yaz

@@ -792,6 +792,9 @@ namespace DeuYbsLms.Infrastructure.Migrations
                     b.Property<int>("CurrentStreak")
                         .HasColumnType("int");
 
+                    b.Property<int>("GradeLevel")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 

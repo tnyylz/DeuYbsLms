@@ -32,9 +32,27 @@ export default function VideoPlayer({ lessonId, videoUrl, initialTime, onVideoCo
 
   // YouTube embed kontrolü
   const isYoutube = videoUrl?.includes('youtube.com') || videoUrl?.includes('youtu.be') || false;
-  const videoId = isYoutube 
-    ? (videoUrl.includes('youtu.be') ? videoUrl.split('/').pop() : new URL(videoUrl).searchParams.get('v'))
-    : null;
+  
+  const getYoutubeVideoId = (url: string) => {
+    if (!url) return null;
+    try {
+      if (url.includes('youtu.be')) {
+        return new URL(url).pathname.slice(1).split('?')[0];
+      } else if (url.includes('youtube.com/shorts/')) {
+        return new URL(url).pathname.split('/shorts/')[1].split('?')[0];
+      } else if (url.includes('youtube.com/embed/')) {
+        return new URL(url).pathname.split('/embed/')[1].split('?')[0];
+      } else if (url.includes('youtube.com')) {
+        return new URL(url).searchParams.get('v');
+      }
+    } catch {
+      // invalid URL fallback
+      return null;
+    }
+    return null;
+  };
+
+  const videoId = isYoutube ? getYoutubeVideoId(videoUrl) : null;
 
   // --- YouTube API Entegrasyonu ---
   useEffect(() => {
@@ -49,7 +67,11 @@ export default function VideoPlayer({ lessonId, videoUrl, initialTime, onVideoCo
       const tag = document.createElement('script');
       tag.src = "https://www.youtube.com/iframe_api";
       const firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+      if (firstScriptTag && firstScriptTag.parentNode) {
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+      } else {
+        document.head.appendChild(tag);
+      }
 
       window.onYouTubeIframeAPIReady = () => {
         initializePlayer();

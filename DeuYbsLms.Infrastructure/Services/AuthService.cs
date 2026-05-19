@@ -20,11 +20,11 @@ public class AuthService : IAuthService
         _tokenService = tokenService;
     }
 
-    public async Task<Result<AuthResponseDto>> RegisterAsync(RegisterRequestDto request)
+    public async Task<Result<Guid>> CreateUserAsync(RegisterRequestDto request)
     {
         // Email daha önce alınmış mı?
         if (await _userRepository.IsEmailTakenAsync(request.Email))
-            return Result<AuthResponseDto>.Failure("Bu email adresi zaten kullanılıyor.");
+            return Result<Guid>.Failure("Bu email adresi zaten kullanılıyor.");
 
         var user = new AppUser
         {
@@ -45,6 +45,7 @@ public class AuthService : IAuthService
                 Id = Guid.NewGuid(),
                 AppUserId = user.Id,
                 StudentNumber = request.StudentNumber,
+                GradeLevel = request.GradeLevel ?? 1,
                 TotalXp = 0,
                 CurrentLevel = 1,
                 XpToNextLevel = 100,
@@ -54,16 +55,7 @@ public class AuthService : IAuthService
 
         await _userRepository.AddAsync(user);
 
-        var token = _tokenService.GenerateToken(user);
-
-        return Result<AuthResponseDto>.Success(new AuthResponseDto
-        {
-            Token = token,
-            UserId = user.Id,
-            FullName = user.FullName,
-            Email = user.Email,
-            Role = user.Role.ToString()
-        });
+        return Result<Guid>.Success(user.Id);
     }
 
     public async Task<Result<AuthResponseDto>> LoginAsync(LoginRequestDto request)
