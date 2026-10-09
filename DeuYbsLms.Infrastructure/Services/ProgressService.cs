@@ -15,6 +15,7 @@ public class ProgressService : IProgressService
     private readonly IEnrollmentRepository _enrollmentRepository;
     private readonly IProgressRepository _progressRepository;
     private readonly ILessonRepository _lessonRepository;
+    private readonly IQuizRepository _quizRepository;
     private readonly IGamificationService _gamificationService;
     private readonly IChallengeService _challengeService;
 
@@ -22,12 +23,14 @@ public class ProgressService : IProgressService
         IEnrollmentRepository enrollmentRepository,
         IProgressRepository progressRepository,
         ILessonRepository lessonRepository,
+        IQuizRepository quizRepository,
         IGamificationService gamificationService,
         IChallengeService challengeService)
     {
         _enrollmentRepository = enrollmentRepository;
         _progressRepository = progressRepository;
         _lessonRepository = lessonRepository;
+        _quizRepository = quizRepository;
         _gamificationService = gamificationService;
         _challengeService = challengeService;
     }
@@ -61,7 +64,8 @@ public class ProgressService : IProgressService
             };
         }).OrderBy(l => l.OrderIndex).ToList();
 
-        var isTrulyCompleted = totalLessons > 0 && completedLessons == totalLessons;
+        var hasFinalExam = enrollment.Course.FinalExam != null;
+        var isTrulyCompleted = totalLessons > 0 && completedLessons == totalLessons && (!hasFinalExam || enrollment.IsFinalExamPassed);
 
         // DB bayrağını senkronize et (Örn: yeni ders eklenmişse IsCourseCompleted hala true olabilir)
         if (enrollment.IsCourseCompleted != isTrulyCompleted)
@@ -85,6 +89,8 @@ public class ProgressService : IProgressService
                 ? Math.Round((double)completedLessons / totalLessons * 100, 1)
                 : 0,
             IsCompleted = isTrulyCompleted,
+            IsFinalExamPassed = enrollment.IsFinalExamPassed,
+            LastFinalExamScore = enrollment.LastFinalExamScore,
             LessonProgresses = lessonDtos
         });
     }
@@ -182,7 +188,15 @@ public class ProgressService : IProgressService
 
     public async Task<Result<QuizResultDto>> SubmitQuizAsync(Guid studentId, SubmitQuizDto request)
     {
-        var lesson = await _lessonRepository.GetLessonWithQuizAsync(request.LessonId);
+        if (request.CourseId.HasValue)
+        {
+            return await ProcessFinalExamSubmissionAsync(studentId, request.CourseId.Value, request);
+        }
+
+        if (!request.LessonId.HasValue)
+            return Result<QuizResultDto>.Failure("LessonId veya CourseId gereklidir.");
+
+        var lesson = await _lessonRepository.GetLessonWithQuizAsync(request.LessonId.Value);
 
         if (lesson?.Quiz is null)
             return Result<QuizResultDto>.Failure("Bu derse ait quiz bulunamadı.");
@@ -194,7 +208,7 @@ public class ProgressService : IProgressService
             return Result<QuizResultDto>.Failure("Bu kursa kayıtlı değilsiniz.");
 
         var progress = enrollment.LessonProgresses
-            .FirstOrDefault(lp => lp.LessonId == request.LessonId);
+            .FirstOrDefault(lp => lp.LessonId == request.LessonId.Value);
 
         if (progress is null || !progress.IsVideoCompleted)
             return Result<QuizResultDto>.Failure("Önce videoyu tamamlamalısınız.");
@@ -267,7 +281,7 @@ public class ProgressService : IProgressService
 
         return Result<QuizResultDto>.Success(new QuizResultDto
         {
-            LessonId = request.LessonId,
+            LessonId = request.LessonId.GetValueOrDefault(),
             Score = score,
             IsPassed = isPassed,
             CorrectAnswers = correctCount,
@@ -278,6 +292,7 @@ public class ProgressService : IProgressService
             NextLessonId = nextLessonId,
             XpResult = xpResult,
             IsCourseCompleted = enrollment.IsCourseCompleted, // ✅ burası güncellendi
+            EnrollmentId = enrollment.Id,
             Message = isPassed
          ? "Tebrikler! Quiz'i geçtiniz. 🎉"
          : $"Başarısız. Puanınız: {score}. Geçme puanı: {quiz.MinimumPassingScore}"
@@ -377,7 +392,10 @@ public class ProgressService : IProgressService
         var totalLessons = enrollment.Course.Lessons.Count;
         var completedCount = GetCompletedLessonsCount(enrollment.Course.Lessons, allProgresses);
 
-        if (completedCount == totalLessons && totalLessons > 0)
+        var hasFinalExam = enrollment.Course.FinalExam != null;
+        var isTrulyCompleted = completedCount == totalLessons && totalLessons > 0 && (!hasFinalExam || enrollment.IsFinalExamPassed);
+
+        if (isTrulyCompleted)
         {
             enrollment.IsCourseCompleted = true;
             enrollment.CompletedAt = DateTime.UtcNow;
@@ -398,7 +416,8 @@ public class ProgressService : IProgressService
             var total = e.Course.Lessons.Count;
             var completed = GetCompletedLessonsCount(e.Course.Lessons, e.LessonProgresses);
 
-            var isTrulyCompleted = total > 0 && completed == total;
+            var hasFinalExam = e.Course.FinalExam != null;
+            var isTrulyCompleted = total > 0 && completed == total && (!hasFinalExam || e.IsFinalExamPassed);
 
             return new EnrollmentDto
             {
@@ -439,4 +458,70 @@ public class ProgressService : IProgressService
             LastWatchedSecond = lp.LastWatchedSecond,
             QuizAttemptCount = lp.QuizAttemptCount
         };
+
+    private async Task<Result<QuizResultDto>> ProcessFinalExamSubmissionAsync(Guid studentId, Guid courseId, SubmitQuizDto request)
+    {
+        var enrollment = await _enrollmentRepository.GetEnrollmentWithProgressAsync(studentId, courseId);
+        if (enrollment == null) return Result<QuizResultDto>.Failure("Kursa kayıtlı değilsiniz.");
+
+        var totalLessons = enrollment.Course.Lessons.Count;
+        var completedLessons = GetCompletedLessonsCount(enrollment.Course.Lessons, enrollment.LessonProgresses);
+
+        if (completedLessons < totalLessons)
+            return Result<QuizResultDto>.Failure("Final sınavına girmek için tüm dersleri tamamlamalısınız.");
+            
+        var finalExam = await _quizRepository.GetQuizByCourseIdAsync(courseId);
+
+        if (finalExam == null) return Result<QuizResultDto>.Failure("Bu kursun final sınavı bulunmamaktadır.");
+
+        int correctCount = 0;
+        foreach (var question in finalExam.Questions)
+        {
+            var studentAnswer = request.Answers.FirstOrDefault(a => a.QuestionId == question.Id);
+            if (studentAnswer is null) continue;
+
+            var correctOption = question.AnswerOptions.FirstOrDefault(ao => ao.IsCorrect);
+            if (correctOption?.Id == studentAnswer.SelectedAnswerOptionId)
+                correctCount++;
+        }
+
+        double score = finalExam.Questions.Count > 0
+            ? Math.Round((double)correctCount / finalExam.Questions.Count * 100, 1)
+            : 0;
+
+        bool isPassed = score >= finalExam.MinimumPassingScore;
+
+        enrollment.LastFinalExamScore = score;
+        
+        bool justPassed = isPassed && !enrollment.IsFinalExamPassed;
+        XpResultDto? xpResult = null;
+
+        if (justPassed)
+        {
+            enrollment.IsFinalExamPassed = true;
+            await CheckCourseCompletionAsync(enrollment, studentId);
+            xpResult = await _gamificationService.AwardXpAsync(studentId, 250, "Final sınavı geçildi!");
+            await _challengeService.UpdateChallengeProgressAsync(studentId, ChallengeType.QuizSuccess, 1);
+        }
+
+        await _enrollmentRepository.UpdateAsync(enrollment);
+
+        return Result<QuizResultDto>.Success(new QuizResultDto
+        {
+            LessonId = Guid.Empty, // No lesson id for final exam
+            Score = score,
+            IsPassed = isPassed,
+            CorrectAnswers = correctCount,
+            TotalQuestions = finalExam.Questions.Count,
+            MinimumPassingScore = finalExam.MinimumPassingScore,
+            AttemptCount = 1, // Store attempts if needed later
+            NextLessonUnlocked = false,
+            XpResult = xpResult,
+            IsCourseCompleted = enrollment.IsCourseCompleted,
+            EnrollmentId = enrollment.Id,
+            Message = isPassed
+         ? "Tebrikler! Final Sınavını başarıyla geçtiniz. 🎉"
+         : $"Başarısız. Puanınız: {score}. Geçme puanı: {finalExam.MinimumPassingScore}"
+        });
+    }
 }

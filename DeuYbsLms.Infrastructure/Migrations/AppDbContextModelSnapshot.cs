@@ -379,13 +379,16 @@ namespace DeuYbsLms.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("CourseId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<Guid>("LessonId")
+                    b.Property<Guid?>("LessonId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("MinimumPassingScore")
@@ -403,8 +406,13 @@ namespace DeuYbsLms.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CourseId")
+                        .IsUnique()
+                        .HasFilter("[CourseId] IS NOT NULL");
+
                     b.HasIndex("LessonId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[LessonId] IS NOT NULL");
 
                     b.ToTable("Quizzes");
                 });
@@ -588,6 +596,9 @@ namespace DeuYbsLms.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsEquipped")
                         .HasColumnType("bit");
 
                     b.Property<bool>("IsUsed")
@@ -823,8 +834,14 @@ namespace DeuYbsLms.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsFinalExamPassed")
+                        .HasColumnType("bit");
+
                     b.Property<int>("KanbanStatus")
                         .HasColumnType("int");
+
+                    b.Property<double?>("LastFinalExamScore")
+                        .HasColumnType("float");
 
                     b.Property<Guid>("StudentId")
                         .HasColumnType("uniqueidentifier");
@@ -990,11 +1007,17 @@ namespace DeuYbsLms.Infrastructure.Migrations
 
             modelBuilder.Entity("DeuYbsLms.Domain.Entities.Course.Quiz", b =>
                 {
+                    b.HasOne("DeuYbsLms.Domain.Entities.Course.Course", "Course")
+                        .WithOne("FinalExam")
+                        .HasForeignKey("DeuYbsLms.Domain.Entities.Course.Quiz", "CourseId")
+                        .OnDelete(DeleteBehavior.ClientCascade);
+
                     b.HasOne("DeuYbsLms.Domain.Entities.Course.Lesson", "Lesson")
                         .WithOne("Quiz")
                         .HasForeignKey("DeuYbsLms.Domain.Entities.Course.Quiz", "LessonId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Course");
 
                     b.Navigation("Lesson");
                 });
@@ -1122,6 +1145,8 @@ namespace DeuYbsLms.Infrastructure.Migrations
             modelBuilder.Entity("DeuYbsLms.Domain.Entities.Course.Course", b =>
                 {
                     b.Navigation("Enrollments");
+
+                    b.Navigation("FinalExam");
 
                     b.Navigation("Lessons");
 

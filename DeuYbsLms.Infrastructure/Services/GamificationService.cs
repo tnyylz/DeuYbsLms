@@ -108,10 +108,26 @@ public class GamificationService : IGamificationService
             
             if (activeMultiplier != null)
             {
-                multiplier *= 2; // Sabit x2 bonus
+                double bonus = 2.0;
+                if (!string.IsNullOrEmpty(activeMultiplier.ShopItem.Metadata))
+                {
+                    try
+                    {
+                        var json = System.Text.Json.JsonDocument.Parse(activeMultiplier.ShopItem.Metadata);
+                        if (json.RootElement.TryGetProperty("multiplier", out var multProp))
+                        {
+                            bonus = multProp.GetDouble();
+                        }
+                    }
+                    catch
+                    {
+                        if (double.TryParse(activeMultiplier.ShopItem.Metadata, out var parsed)) bonus = parsed;
+                    }
+                }
+                multiplier *= bonus;
                 activeMultiplier.IsUsed = true; // Tek kullanımlık şimdilik
                 activeMultiplier.UpdatedAt = DateTime.UtcNow;
-                reason += " (⚡ XP Boost Aktif!)";
+                reason += $" (⚡ XP Boost Aktif! x{bonus})";
             }
 
             xpAmount = (int)(xpAmount * multiplier);
@@ -229,9 +245,9 @@ public class GamificationService : IGamificationService
             ? Math.Round((double)profile.TotalXp / profile.XpToNextLevel * 100, 1)
             : 0;
 
-        // Rank hesaplama - tüm profilleri XP'ye göre sıralayıp pozisyon bulma
+        // Rank hesaplama - tüm profilleri Level ve XP'ye göre sıralayıp pozisyon bulma
         var allProfiles = await _profileRepository.GetAllAsync(_ => true);
-        var sortedProfiles = allProfiles.OrderByDescending(p => p.TotalXp).ToList();
+        var sortedProfiles = allProfiles.OrderByDescending(p => p.CurrentLevel).ThenByDescending(p => p.TotalXp).ToList();
         int rank = sortedProfiles.FindIndex(p => p.Id == profile.Id) + 1;
         if (rank == 0) rank = sortedProfiles.Count;
 
@@ -270,13 +286,13 @@ public class GamificationService : IGamificationService
                 .Include(ui => ui.ShopItem)
                 .FirstOrDefaultAsync(ui => ui.StudentProfileId == profile.Id && 
                                          ui.ShopItem.Type == ShopItemType.SpecialTitle && 
-                                         !ui.IsUsed))?.ShopItem.Metadata,
+                                         ui.IsEquipped))?.ShopItem.Metadata,
             
             ProfileFrameColor = (await _context.UserInventoryItems
                 .Include(ui => ui.ShopItem)
                 .FirstOrDefaultAsync(ui => ui.StudentProfileId == profile.Id && 
                                          ui.ShopItem.Type == ShopItemType.ProfileFrame && 
-                                         !ui.IsUsed))?.ShopItem.Metadata,
+                                         ui.IsEquipped))?.ShopItem.Metadata,
 
             ActiveChallenges = (challengesResult.IsSuccess && challengesResult.Data != null) 
                 ? challengesResult.Data 
@@ -289,24 +305,30 @@ public class GamificationService : IGamificationService
     {
         var leaderboard = await _context.StudentProfiles
             .Include(p => p.AppUser)
+            .Include(p => p.Inventory)
+                .ThenInclude(i => i.ShopItem)
             .OrderByDescending(p => p.CurrentLevel)
             .ThenByDescending(p => p.TotalXp)
             .Take(top)
-            .Select((p) => new LeaderboardDto
-            {
-                StudentId = p.AppUserId,
-                FullName = p.AppUser.FirstName + " " + p.AppUser.LastName,
-                ProfilePictureUrl = p.AppUser.ProfilePictureUrl,
-                TotalXp = p.TotalXp,
-                Level = p.CurrentLevel
-            }).ToListAsync();
+            .ToListAsync();
 
-        for (int i = 0; i < leaderboard.Count; i++)
+        var dtos = leaderboard.Select((p) => new LeaderboardDto
         {
-            leaderboard[i].Rank = i + 1;
+            StudentId = p.AppUserId,
+            FullName = p.AppUser.FirstName + " " + p.AppUser.LastName,
+            ProfilePictureUrl = p.AppUser.ProfilePictureUrl,
+            TotalXp = p.TotalXp,
+            Level = p.CurrentLevel,
+            ProfileFrameColor = p.Inventory.FirstOrDefault(i => i.IsEquipped && i.ShopItem.Type == ShopItemType.ProfileFrame)?.ShopItem.Metadata,
+            CurrentTitle = p.Inventory.FirstOrDefault(i => i.IsEquipped && i.ShopItem.Type == ShopItemType.SpecialTitle)?.ShopItem.Metadata
+        }).ToList();
+
+        for (int i = 0; i < dtos.Count; i++)
+        {
+            dtos[i].Rank = i + 1;
         }
 
-        return Result<List<LeaderboardDto>>.Success(leaderboard);
+        return Result<List<LeaderboardDto>>.Success(dtos);
     }
 
     private static BadgeDto MapBadgeToDto(UserBadge badge)
@@ -340,5 +362,46 @@ public class GamificationService : IGamificationService
             Level = badge.Level,
             EarnedAt = badge.EarnedAt
         };
+    }
+
+    public async Task<Result<bool>> EquipItemAsync(Guid studentId, Guid inventoryItemId)
+    {
+        var profile = await _profileRepository.GetAsync(sp => sp.AppUserId == studentId);
+        if (profile == null) return Result<bool>.Failure("Profil bulunamadı.");
+
+        var itemToEquip = await _context.UserInventoryItems
+            .Include(i => i.ShopItem)
+            .FirstOrDefaultAsync(i => i.Id == inventoryItemId && i.StudentProfileId == profile.Id);
+
+        if (itemToEquip == null) return Result<bool>.Failure("Eşya envanterinizde bulunamadı.");
+
+        if (itemToEquip.ShopItem.Type != ShopItemType.ProfileFrame && itemToEquip.ShopItem.Type != ShopItemType.SpecialTitle)
+        {
+            return Result<bool>.Failure("Bu tür eşyalar kuşanılmaz.");
+        }
+
+        // Çıkar/Kuşan mantığı
+        if (itemToEquip.IsEquipped)
+        {
+            itemToEquip.IsEquipped = false;
+        }
+        else
+        {
+            // Aynı türdeki diğer eşyaları çıkar
+            var sameTypeItems = await _context.UserInventoryItems
+                .Include(i => i.ShopItem)
+                .Where(i => i.StudentProfileId == profile.Id && i.ShopItem.Type == itemToEquip.ShopItem.Type && i.IsEquipped)
+                .ToListAsync();
+
+            foreach (var item in sameTypeItems)
+            {
+                item.IsEquipped = false;
+            }
+
+            itemToEquip.IsEquipped = true;
+        }
+
+        await _context.SaveChangesAsync();
+        return Result<bool>.Success(itemToEquip.IsEquipped);
     }
 }

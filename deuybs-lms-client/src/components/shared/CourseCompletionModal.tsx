@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 import { Award, CheckCircle, ExternalLink, X } from 'lucide-react';
 import type { QuizResultDto } from '../../types';
+import { generateCertificateApi } from '../../api/certificate.api';
+import toast from 'react-hot-toast';
 
 interface Props {
   result: QuizResultDto;
@@ -44,7 +46,24 @@ export const CourseCompletionModal = ({ result, onClose }: Props) => {
     return () => { confetti.reset(); };
   }, []);
 
-  const handleViewCertificates = () => {
+  const handleViewCertificates = async () => {
+    if (result.enrollmentId) {
+      const loadingToast = toast.loading('Sertifikanız hazırlanıyor...');
+      try {
+        await generateCertificateApi(result.enrollmentId);
+        toast.success('Sertifikanız başarıyla oluşturuldu! ✅', { id: loadingToast });
+      } catch (err: any) {
+        toast.dismiss(loadingToast);
+        const errorMsg = err.response?.data?.message || err.response?.data || err.message || 'Başarısız.';
+        if (errorMsg.toString().toLowerCase().includes('zaten var')) {
+          toast.success('Bu kursa ait sertifikanız halihazırda mevcut.', { id: loadingToast });
+        } else {
+          toast.error(`Hata: ${errorMsg}`);
+          return;
+        }
+      }
+    }
+    
     onClose();
     navigate('/student/certificates'); // Fix the routing from /dashboard/certificates to /student/certificates
   };
@@ -82,7 +101,7 @@ export const CourseCompletionModal = ({ result, onClose }: Props) => {
           <div className="grid grid-cols-2 gap-4 py-6 border-y border-slate-200 border-dashed">
             <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 shadow-sm">
               <div className="text-sm font-semibold text-slate-500 uppercase tracking-widest mb-1">Kazanılan XP</div>
-              <div className="text-2xl font-bold text-amber-500">+{result.xpEarned}</div>
+              <div className="text-2xl font-bold text-amber-500">+{result.xpResult?.xpAwarded || 0}</div>
             </div>
             
             <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 shadow-sm">

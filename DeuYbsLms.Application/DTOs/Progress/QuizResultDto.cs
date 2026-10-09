@@ -18,4 +18,5 @@ public class QuizResultDto
     public bool IsCourseCompleted { get; set; }
     public string? EarnedBadge { get; set; }    // Varsa kazanılan rozet adı
     public XpResultDto? XpResult { get; set; }
+    public Guid? EnrollmentId { get; set; }
 }

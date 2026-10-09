@@ -11,8 +11,11 @@ public class Quiz : BaseEntity
     // KİLİT KAPIСИ: Öğrenci bu puanın altında kalırsa bir sonraki ders açılmaz
     public int MinimumPassingScore { get; set; } = 70;
 
-    public Guid LessonId { get; set; }
-    public Lesson Lesson { get; set; } = null!;
+    public Guid? LessonId { get; set; }
+    public Lesson? Lesson { get; set; }
+
+    public Guid? CourseId { get; set; }
+    public Course? Course { get; set; }
 
     public ICollection<Question> Questions { get; set; } = new List<Question>();
 }

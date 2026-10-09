@@ -15,6 +15,7 @@ public class CourseRepository : Repository<Course>, ICourseRepository
         => await _context.Courses
             .Include(c => c.Teacher)
             .Include(c => c.Tags)
+            .Include(c => c.FinalExam)
             .Include(c => c.Lessons.OrderBy(l => l.OrderIndex))
                 .ThenInclude(l => l.Quiz)
                     .ThenInclude(q => q!.Questions)

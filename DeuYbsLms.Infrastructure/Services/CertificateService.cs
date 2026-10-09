@@ -25,6 +25,10 @@ public class CertificateService : ICertificateService
             .Include(e => e.Course)
                 .ThenInclude(c => c.Lessons)
                     .ThenInclude(l => l.Quiz)
+            .Include(e => e.Course)
+                .ThenInclude(c => c.FinalExam)
+            .Include(e => e.Course)
+                .ThenInclude(c => c.Teacher)
             .Include(e => e.LessonProgresses)
             .FirstOrDefaultAsync(e => e.Id == enrollmentId);
 
@@ -54,6 +58,12 @@ public class CertificateService : ICertificateService
             return Result<CertificateDto>.Failure("Kurs henüz tamamlanmamış veya yeni dersler eklenmiş.");
         }
 
+        var hasFinalExam = enrollment.Course.FinalExam != null;
+        if (hasFinalExam && !enrollment.IsFinalExamPassed)
+        {
+            return Result<CertificateDto>.Failure("Sertifika almak için kurs sonu final sınavını geçmelisiniz.");
+        }
+
         var existingCert = await _context.Certificates
             .FirstOrDefaultAsync(c => c.EnrollmentId == enrollmentId);
 
@@ -64,6 +74,7 @@ public class CertificateService : ICertificateService
                 Id = existingCert.Id,
                 StudentName = enrollment.Student.FullName,
                 CourseTitle = enrollment.Course.Title,
+                TeacherName = enrollment.Course.Teacher?.FullName ?? "Bilinmiyor",
                 UniqueVerificationCode = existingCert.UniqueVerificationCode,
                 IssuedAt = existingCert.IssuedAt,
                 PdfStoragePath = existingCert.PdfStoragePath
@@ -85,6 +96,7 @@ public class CertificateService : ICertificateService
             Id = certificate.Id,
             StudentName = enrollment.Student.FullName,
             CourseTitle = enrollment.Course.Title,
+            TeacherName = enrollment.Course.Teacher?.FullName ?? "Bilinmiyor",
             UniqueVerificationCode = certificate.UniqueVerificationCode,
             IssuedAt = certificate.IssuedAt,
             PdfStoragePath = certificate.PdfStoragePath
@@ -98,7 +110,8 @@ public class CertificateService : ICertificateService
                 .ThenInclude(e => e.Student)
             .Include(c => c.Enrollment)
                 .ThenInclude(e => e.Course)
-            .FirstOrDefaultAsync(c => c.UniqueVerificationCode == verificationCode);
+                    .ThenInclude(c => c.Teacher)
+            .FirstOrDefaultAsync(c => c.UniqueVerificationCode == verificationCode || (verificationCode.Length >= 8 && c.UniqueVerificationCode.StartsWith(verificationCode)));
 
         if (certificate == null)
             return Result<CertificateDto>.Failure("Sertifika bulunamadı.");
@@ -108,6 +121,7 @@ public class CertificateService : ICertificateService
             Id = certificate.Id,
             StudentName = certificate.Enrollment.Student.FullName,
             CourseTitle = certificate.Enrollment.Course.Title,
+            TeacherName = certificate.Enrollment.Course.Teacher?.FullName ?? "Bilinmiyor",
             UniqueVerificationCode = certificate.UniqueVerificationCode,
             IssuedAt = certificate.IssuedAt,
             PdfStoragePath = certificate.PdfStoragePath
@@ -124,9 +138,16 @@ public class CertificateService : ICertificateService
                     .ThenInclude(c => c.Lessons)
                         .ThenInclude(l => l.Quiz)
             .Include(c => c.Enrollment)
+                .ThenInclude(e => e.Course)
+                    .ThenInclude(c => c.FinalExam)
+            .Include(c => c.Enrollment)
+                .ThenInclude(e => e.Course)
+                    .ThenInclude(c => c.Teacher)
+            .Include(c => c.Enrollment)
                 .ThenInclude(e => e.LessonProgresses)
             .Where(c => c.Enrollment.StudentId == studentId)
             .OrderByDescending(c => c.IssuedAt)
+            .AsNoTracking()
             .ToListAsync();
 
         // Eğer kursa yeni ders eklenmişse ve öğrenci bitirmemişse sertifikayı gizle
@@ -143,7 +164,7 @@ public class CertificateService : ICertificateService
                 if (p == null) return false;
                 return l.Quiz == null ? p.IsVideoCompleted : p.IsQuizPassed;
             });
-            return total > 0 && completed >= total;
+            return total > 0 && completed >= total && (e.Course.FinalExam == null || e.IsFinalExamPassed);
         }).ToList();
 
         var dtos = validCertificates.Select(c => new CertificateDto
@@ -151,6 +172,7 @@ public class CertificateService : ICertificateService
             Id = c.Id,
             StudentName = c.Enrollment.Student.FullName,
             CourseTitle = c.Enrollment.Course.Title,
+            TeacherName = c.Enrollment.Course.Teacher?.FullName ?? "Bilinmiyor",
             UniqueVerificationCode = c.UniqueVerificationCode,
             IssuedAt = c.IssuedAt,
             PdfStoragePath = c.PdfStoragePath

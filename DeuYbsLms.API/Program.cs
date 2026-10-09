@@ -8,6 +8,7 @@ using DeuYbsLms.API.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -57,7 +58,7 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new() { Title = "DEU YBS LMS API", Version = "v1" });
+    c.SwaggerDoc("v1", new() { Title = "YBS Portal API", Version = "v1" });
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -92,11 +93,11 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+//}
 
 app.UseCors("AllowAll");
 app.UseStaticFiles();
@@ -108,6 +109,8 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await DbInitializer.SeedAsync(context);
+    // Veritabanı yoksa oluşturup tüm migration'ları otomatik uygular
+   // await context.Database.MigrateAsync();
+    // await DbInitializer.SeedAsync(context);
 }
 app.Run();

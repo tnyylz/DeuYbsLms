@@ -32,7 +32,9 @@ public class MappingProfile : Profile
         CreateMap<Course, CourseDetailDto>()
             .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher.FullName))
             .ForMember(dest => dest.Level, opt => opt.MapFrom(src => src.Level.ToString()))
-            .ForMember(dest => dest.Tags, opt => opt.MapFrom(src => src.Tags.Select(t => t.Name).ToList()));
+            .ForMember(dest => dest.Tags, opt => opt.MapFrom(src => src.Tags.Select(t => t.Name).ToList()))
+            .ForMember(dest => dest.HasFinalExam, opt => opt.MapFrom(src => src.FinalExam != null))
+            .ForMember(dest => dest.FinalExamMinPassingScore, opt => opt.MapFrom(src => src.FinalExam != null ? src.FinalExam.MinimumPassingScore : (int?)null));
 
         // Lesson → LessonDto
         CreateMap<Lesson, LessonDto>()

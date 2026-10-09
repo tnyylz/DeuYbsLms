@@ -6,7 +6,8 @@ public class CreateQuizDto
 {
     public string Title { get; set; } = string.Empty;
     public int MinimumPassingScore { get; set; } = 70;
-    public Guid LessonId { get; set; }
+    public Guid? LessonId { get; set; }
+    public Guid? CourseId { get; set; }
     public List<CreateQuestionDto> Questions { get; set; } = new();
 }
 

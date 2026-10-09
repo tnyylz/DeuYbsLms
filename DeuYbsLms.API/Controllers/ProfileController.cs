@@ -61,6 +61,7 @@ public class ProfileController : ControllerBase
             LastName = user.LastName,
             Email = user.Email,
             StudentNumber = user.StudentProfile?.StudentNumber,
+            GradeLevel = user.StudentProfile?.GradeLevel ?? 1,
             ProfilePictureUrl = user.ProfilePictureUrl,
             TotalXp = stats?.TotalXp ?? user.StudentProfile?.TotalXp ?? 0,
             CurrentLevel = stats?.CurrentLevel ?? user.StudentProfile?.CurrentLevel ?? 1,
@@ -87,26 +88,32 @@ public class ProfileController : ControllerBase
             
         if (user == null) return NotFound();
 
-        user.FirstName = request.FirstName;
-        user.LastName = request.LastName;
-        
+        // E-posta benzersizlik kontrolü ve güncellemesi (tüm kullanıcılar için)
+        if (!string.IsNullOrEmpty(request.Email) && request.Email.ToLower() != user.Email)
+        {
+            var isEmailTaken = await _context.Users.AnyAsync(u => u.Email == request.Email.ToLower() && u.Id != userId);
+            if (isEmailTaken) return BadRequest("Bu e-posta adresi zaten kullanımda.");
+            
+            user.Email = request.Email.ToLower();
+        }
+
         if (!string.IsNullOrEmpty(request.ProfilePictureUrl))
         {
             user.ProfilePictureUrl = request.ProfilePictureUrl;
         }
 
-        // Student Number update
         if (user.StudentProfile != null)
         {
-            // Check if student number is taken by another student
-            if (!string.IsNullOrEmpty(request.StudentNumber) && 
-                request.StudentNumber != user.StudentProfile.StudentNumber)
-            {
-                var isTaken = await _context.StudentProfiles.AnyAsync(sp => sp.StudentNumber == request.StudentNumber && sp.AppUserId != userId);
-                if (isTaken) return BadRequest("Bu öğrenci numarası zaten kullanımda.");
-                
-                user.StudentProfile.StudentNumber = request.StudentNumber;
-            }
+            // ÖĞRENCİ KISITLAMALARI:
+            // Öğrenci şifresi (başka endpoint), profil fotoğrafı ve e-postası hariç hiçbir verisini değiştiremez.
+            // Ad, Soyad ve Öğrenci Numarası güncellemelerini es geçiyoruz (read-only yapıyoruz).
+        }
+        else
+        {
+            // ÖĞRETMEN / ADMIN:
+            // Herhangi bir kısıtlama olmaksızın ad ve soyadını güncelleyebilir.
+            user.FirstName = request.FirstName;
+            user.LastName = request.LastName;
         }
 
         await _context.SaveChangesAsync();

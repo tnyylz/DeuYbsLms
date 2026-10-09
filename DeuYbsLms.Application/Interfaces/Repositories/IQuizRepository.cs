@@ -8,4 +8,5 @@ public interface IQuizRepository : IRepository<Quiz>
 {
     Task<Quiz?> GetQuizWithQuestionsAsync(Guid quizId);
     Task<Quiz?> GetQuizByLessonIdAsync(Guid lessonId);
+    Task<Quiz?> GetQuizByCourseIdAsync(Guid courseId);
 }

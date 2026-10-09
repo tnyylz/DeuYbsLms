@@ -24,6 +24,8 @@ public class StudentLeaderboardDto
     public string FullName { get; set; } = string.Empty;
     public int TotalXp { get; set; }
     public int Level { get; set; }
+    public string? ProfileFrameColor { get; set; }
+    public string? CurrentTitle { get; set; }
 }
 
 public class MonthlyRegistrationDto

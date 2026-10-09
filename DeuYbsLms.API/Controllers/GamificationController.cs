@@ -37,4 +37,15 @@ public class GamificationController : ControllerBase
             return BadRequest(result.ErrorMessage);
         return Ok(result.Data);
     }
+
+    [HttpPost("equip/{inventoryItemId}")]
+    public async Task<IActionResult> EquipItem(Guid inventoryItemId)
+    {
+        var studentId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+        var result = await _gamificationService.EquipItemAsync(studentId, inventoryItemId);
+        if (!result.IsSuccess)
+            return BadRequest(new { Message = result.ErrorMessage });
+            
+        return Ok(new { IsEquipped = result.Data, Message = result.Data ? "Eşya kuşanılgı." : "Eşya çıkarıldı." });
+    }
 }

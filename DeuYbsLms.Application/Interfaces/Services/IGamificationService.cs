@@ -11,4 +11,5 @@ public interface IGamificationService
     Task CheckAndAwardBadgesAsync(Guid studentId);
     Task<Result<StudentGamificationDto>> GetStudentGamificationAsync(Guid studentId);
     Task<Result<List<LeaderboardDto>>> GetLeaderboardAsync(int top = 10);
+    Task<Result<bool>> EquipItemAsync(Guid studentId, Guid inventoryItemId);
 }

@@ -1,12 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { Trash2, Search, BookOpen, Clock, X, Layout, PlayCircle, Star, GraduationCap } from 'lucide-react';
+import React, { useEffect, useState, useRef } from 'react';
+import { Trash2, Search, BookOpen, Clock, X, Layout, PlayCircle, Star, GraduationCap, BarChart3, Image as ImageIcon } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { createCourseApi, getCourseDetailApi } from '../../api/courses.api';
+import { updateCourseApi, uploadThumbnailApi } from '../../api/teacher.api';
+import { getFileUrl } from '../../utils/fileUtils';
 import type { CourseDetailDto, CreateCourseRequest } from '../../types';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { adminApi, type AdminCourse, type AdminUser } from '../../api/admin';
 
 export default function CourseList() {
+  const navigate = useNavigate();
   const [courses, setCourses] = useState<AdminCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCourseDetail, setSelectedCourseDetail] = useState<CourseDetailDto | null>(null);
@@ -30,9 +34,68 @@ export default function CourseList() {
     description: '',
     level: '1',
     totalXpReward: 500,
+    thumbnailUrl: '',
     isPublished: false,
     teacherId: ''
   });
+
+  const adminFileInputRef = useRef<HTMLInputElement>(null);
+  const [isAdminUploadingImage, setIsAdminUploadingImage] = useState(false);
+
+  const handleAdminImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !selectedCourseDetail) return;
+    const file = files[0];
+    try {
+      setIsAdminUploadingImage(true);
+      const uploadedUrl = await uploadThumbnailApi(file);
+      
+      const payload = {
+        title: selectedCourseDetail.title,
+        description: selectedCourseDetail.description,
+        level: String(selectedCourseDetail.level),
+        totalXpReward: selectedCourseDetail.totalXpReward,
+        tags: selectedCourseDetail.tags,
+        thumbnailUrl: uploadedUrl,
+        isPublished: selectedCourseDetail.isPublished
+      };
+      
+      await updateCourseApi(selectedCourseDetail.id, payload);
+      toast.success('Kurs görseli başarıyla güncellendi.');
+      
+      // Refresh detail modal
+      const data = await getCourseDetailApi(selectedCourseDetail.id);
+      setSelectedCourseDetail(data);
+      
+      // Refresh parent course list
+      await fetchCourses();
+    } catch (err) {
+      console.error(err);
+      toast.error('Görsel yüklenirken bir hata oldu.');
+    } finally {
+      setIsAdminUploadingImage(false);
+    }
+  };
+
+  const newCourseFileInputRef = useRef<HTMLInputElement>(null);
+  const [isNewCourseUploadingImage, setIsNewCourseUploadingImage] = useState(false);
+
+  const handleNewCourseImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    try {
+      setIsNewCourseUploadingImage(true);
+      const uploadedUrl = await uploadThumbnailApi(file);
+      setNewCourseForm(prev => ({ ...prev, thumbnailUrl: uploadedUrl }));
+      toast.success('Görsel başarıyla yüklendi.');
+    } catch (err) {
+      console.error(err);
+      toast.error('Görsel yüklenirken bir hata oldu.');
+    } finally {
+      setIsNewCourseUploadingImage(false);
+    }
+  };
   
   // Pagination & Filtering state
   const [searchTerm, setSearchTerm] = useState('');
@@ -110,6 +173,7 @@ export default function CourseList() {
         description: '',
         level: '1',
         totalXpReward: 500,
+        thumbnailUrl: '',
         isPublished: false,
         teacherId: ''
       });
@@ -219,6 +283,13 @@ export default function CourseList() {
                                     {levelData.text}
                                 </span>
                                 <div className="flex opacity-0 group-hover:opacity-100 transition-all">
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); navigate(`/admin/courses/${course.id}/analytics`); }}
+                                        className="p-2 text-gray-400 hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-xl transition-all"
+                                        title="Kurs Analizi"
+                                    >
+                                        <BarChart3 className="w-5 h-5" />
+                                    </button>
                                     <button 
                                         onClick={(e) => handleOpenAssignModal(course.id, e)}
                                         className="p-2 text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-xl transition-all"
@@ -332,19 +403,48 @@ export default function CourseList() {
                   <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* Left: General Info */}
                     <div className="space-y-6">
-                      <div className="aspect-video rounded-3xl overflow-hidden bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 relative group">
+                      <input 
+                        type="file" 
+                        ref={adminFileInputRef} 
+                        onChange={handleAdminImageChange} 
+                        accept="image/*" 
+                        className="hidden" 
+                      />
+                      
+                      <div 
+                        onClick={() => adminFileInputRef.current?.click()}
+                        className="aspect-video rounded-3xl overflow-hidden bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 relative group cursor-pointer shadow-sm hover:border-purple-300 dark:hover:border-purple-800 transition-all duration-300"
+                      >
                         {selectedCourseDetail.thumbnailUrl ? (
                           <img 
-                            src={selectedCourseDetail.thumbnailUrl} 
+                            src={getFileUrl(selectedCourseDetail.thumbnailUrl)} 
                             alt={selectedCourseDetail.title} 
-                            className="w-full h-full object-cover transition-transform group-hover:scale-105"
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                           />
                         ) : (
-                          <div className="flex items-center justify-center h-full">
-                            <BookOpen className="w-12 h-12 text-gray-400" />
+                          <div className="flex flex-col items-center justify-center h-full text-gray-400 dark:text-gray-500">
+                            <ImageIcon className="w-10 h-10 mb-2 group-hover:scale-110 transition-transform" />
+                            <span className="text-xs font-bold">Görsel Yükle</span>
                           </div>
                         )}
-                        <div className="absolute top-4 left-4">
+                        
+                        {/* Hover Overlay */}
+                        <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
+                          <span className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-xs font-black px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-xl scale-95 group-hover:scale-100 transition-all duration-300">
+                            <ImageIcon className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                            {selectedCourseDetail.thumbnailUrl ? 'Kapağı Değiştir' : 'Görsel Yükle'}
+                          </span>
+                        </div>
+
+                        {/* Upload Loader */}
+                        {isAdminUploadingImage && (
+                          <div className="absolute inset-0 bg-slate-950/80 flex flex-col items-center justify-center text-white z-10">
+                            <div className="w-8 h-8 border-3 border-purple-500 border-t-transparent rounded-full animate-spin mb-2" />
+                            <p className="font-extrabold text-[10px] uppercase tracking-wider animate-pulse text-purple-200">Görsel Yükleniyor...</p>
+                          </div>
+                        )}
+
+                        <div className="absolute top-4 left-4 z-20">
                           <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
                             selectedCourseDetail.isPublished 
                               ? 'bg-emerald-500 text-white shadow-emerald-500/50' 
@@ -470,6 +570,57 @@ export default function CourseList() {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Açıklama</label>
                     <textarea required rows={3} value={newCourseForm.description} onChange={e => setNewCourseForm({...newCourseForm, description: e.target.value})} className="w-full p-2 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none dark:text-white" />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Kurs Görseli</label>
+                    <input 
+                      type="file" 
+                      ref={newCourseFileInputRef} 
+                      onChange={handleNewCourseImageChange} 
+                      accept="image/*" 
+                      className="hidden" 
+                    />
+                    
+                    {newCourseForm.thumbnailUrl ? (
+                      <div className="relative aspect-video w-full rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700 group shadow-sm">
+                        <img 
+                          src={getFileUrl(newCourseForm.thumbnailUrl)} 
+                          alt="Kurs Görseli" 
+                          className="w-full h-full object-cover" 
+                        />
+                        <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[1px]">
+                          <button 
+                            type="button" 
+                            onClick={() => newCourseFileInputRef.current?.click()}
+                            className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-xs font-black px-4 py-2 rounded-xl flex items-center gap-1.5 shadow-xl hover:scale-105 transition-all cursor-pointer"
+                          >
+                            <ImageIcon className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                            Görseli Değiştir
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div 
+                        onClick={() => newCourseFileInputRef.current?.click()}
+                        className="aspect-video w-full rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-700/80 hover:border-purple-400 dark:hover:border-purple-600 cursor-pointer flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 transition-all duration-300 relative group overflow-hidden"
+                      >
+                        {isNewCourseUploadingImage ? (
+                          <div className="flex flex-col items-center justify-center text-gray-400">
+                            <div className="w-8 h-8 border-3 border-purple-500 border-t-transparent rounded-full animate-spin mb-2" />
+                            <p className="font-extrabold text-[10px] uppercase tracking-wider animate-pulse text-purple-600 dark:text-purple-400">Görsel Yükleniyor...</p>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center text-center p-4">
+                            <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 flex items-center justify-center shadow-sm mb-2 group-hover:-translate-y-1 transition-transform">
+                              <ImageIcon className="w-5 h-5" />
+                            </div>
+                            <p className="text-xs font-bold text-gray-700 dark:text-gray-300">Kapak Görseli Yükle</p>
+                            <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1 max-w-[240px]">Önerilen oran 16:9, yüksek kaliteli PNG veya JPG</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">

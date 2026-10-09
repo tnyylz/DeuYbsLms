@@ -32,3 +32,8 @@ export const getQuizQuestionsApi = async (lessonId: string): Promise<QuestionDto
   const response = await axiosInstance.get(`/Quiz/lesson/${lessonId}/questions`);
   return response.data.data ?? response.data;
 };
+
+export const getCourseQuizQuestionsApi = async (courseId: string): Promise<QuestionDto[]> => {
+  const response = await axiosInstance.get(`/Quiz/course/${courseId}/questions`);
+  return response.data.data ?? response.data;
+};

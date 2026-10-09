@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ShoppingBag, ShieldCheck, Palette, Award, CheckCircle, Info, Loader2, Package, Sparkles, Zap } from 'lucide-react';
 import { getShopItemsApi, purchaseItemApi, getInventoryApi, seedShopApi } from '../../api/shop.api';
+import { equipItemApi } from '../../api/gamification.api';
 import { getGamificationApi } from '../../api/gamification.api';
 import type { ShopItem, UserInventoryItem, StudentGamificationDto } from '../../types';
 import toast from 'react-hot-toast';
@@ -58,6 +59,16 @@ export default function ShopPage() {
       toast.error(err.response?.data || 'Satın alma başarısız.');
     } finally {
       setBuyingId(null);
+    }
+  };
+
+  const handleEquip = async (inventoryItemId: string) => {
+    try {
+      const result = await equipItemApi(inventoryItemId);
+      toast.success(result.message);
+      fetchData();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Kuşanma işlemi başarısız.');
     }
   };
 
@@ -197,18 +208,28 @@ export default function ShopPage() {
                                 <p className="text-sm text-slate-400 font-bold uppercase tracking-widest px-4">Henüz bir ürünün yok.</p>
                             </div>
                         ) : (
-                            inventory.map((inv) => (
+                            inventory.map((inv) => {
+                                const canEquip = !inv.isUsed && (inv.itemType === 'ProfileFrame' || inv.itemType === 'SpecialTitle');
+                                return (
                                 <div key={inv.id} className={`p-4 rounded-2xl border flex items-center gap-4 transition-all ${inv.isUsed ? 'bg-slate-50 dark:bg-slate-800/20 border-slate-100 dark:border-slate-800 opacity-50' : 'bg-white dark:bg-slate-800 border-emerald-100 dark:border-emerald-900/40 shadow-sm'}`}>
                                     <div className="text-2xl">{inv.iconEmoji}</div>
                                     <div className="flex-1">
                                         <p className="text-sm font-black dark:text-white leading-none mb-1">{inv.itemName}</p>
                                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                                            {inv.isUsed ? 'Kullanıldı' : 'Stokta'} &bull; {new Date(inv.purchasedAt).toLocaleDateString()}
+                                            {inv.isUsed ? 'Kullanıldı' : inv.isEquipped ? 'Kuşanıldı' : 'Stokta'} &bull; {new Date(inv.purchasedAt).toLocaleDateString()}
                                         </p>
                                     </div>
-                                    {!inv.isUsed && <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>}
+                                    {canEquip && (
+                                        <button 
+                                            onClick={() => handleEquip(inv.id)}
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${inv.isEquipped ? 'bg-red-100 text-red-600 hover:bg-red-200' : 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200'}`}
+                                        >
+                                            {inv.isEquipped ? 'Çıkar' : 'Kuşan'}
+                                        </button>
+                                    )}
+                                    {!inv.isUsed && !canEquip && <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>}
                                 </div>
-                            ))
+                            )})
                         )}
                     </div>
                 </section>

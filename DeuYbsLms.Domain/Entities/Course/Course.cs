@@ -22,4 +22,6 @@ public class Course : BaseEntity
     public ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
     public ICollection<CourseEnrollment> Enrollments { get; set; } = new List<CourseEnrollment>();
     public ICollection<CourseTag> Tags { get; set; } = new List<CourseTag>();
+
+    public Quiz? FinalExam { get; set; }
 }

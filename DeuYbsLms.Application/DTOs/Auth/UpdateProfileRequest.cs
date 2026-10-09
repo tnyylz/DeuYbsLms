@@ -6,4 +6,5 @@ public class UpdateProfileRequest
     public string LastName { get; set; } = string.Empty;
     public string? StudentNumber { get; set; }
     public string? ProfilePictureUrl { get; set; }
+    public string Email { get; set; } = string.Empty;
 }

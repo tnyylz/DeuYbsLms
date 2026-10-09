@@ -127,22 +127,20 @@ export default function StudentDashboard() {
                 <BookOpen className="text-white" size={20} />
               </div>
               <span className="font-black tracking-tighter text-slate-900 dark:text-white text-xl hidden sm:block">
-                DEÜ YBS <span className="text-indigo-600">LMS</span>
+                YBS <span className="text-indigo-600">Portal</span>
               </span>
             </Link>
           </div>
 
-          {/* Desktop Navigation Links */}
-          <div className="hidden md:flex items-center gap-1 lg:gap-4">
-            <NavLink to="/courses" icon={BookOpen}>Kurslar</NavLink>
-            <NavLink to="/student/learning-paths" icon={MapIcon}>Yol Haritaları</NavLink>
-            <NavLink to="/student/kanban" icon={Layout} badge="YENİ">Pano</NavLink>
- 
-            <NavLink to="/student/certificates" icon={Award}>Sertifikalar</NavLink>
-          </div>
-
           <div className="flex items-center gap-2 sm:gap-4">
             <div className="flex items-center gap-1 sm:gap-3 bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-700">
+              {/* Desktop Navigation Links */}
+              <div className="hidden md:flex items-center gap-1 lg:gap-3 px-2">
+                <NavLink to="/courses" icon={BookOpen}>Kurslar</NavLink>
+                <NavLink to="/student/kanban" icon={Layout} badge="YENİ">Pano</NavLink>
+                <NavLink to="/student/certificates" icon={Award}>Sertifikalar</NavLink>
+              </div>
+
               <NotificationCenter />
               <ThemeToggle />
               <div className="w-px h-4 bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block"></div>
@@ -173,9 +171,6 @@ export default function StudentDashboard() {
               <div className="flex flex-col gap-1 p-4">
                 <Link to="/courses" className="flex items-center gap-3 p-3 text-slate-600 dark:text-slate-300 font-bold hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all" onClick={() => setIsMobileMenuOpen(false)}>
                   <BookOpen size={20} /> Kurslar
-                </Link>
-                <Link to="/student/learning-paths" className="flex items-center gap-3 p-3 text-slate-600 dark:text-slate-300 font-bold hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all" onClick={() => setIsMobileMenuOpen(false)}>
-                  <MapIcon size={20} /> Yol Haritaları
                 </Link>
                 <Link to="/student/kanban" className="flex items-center gap-3 p-3 text-indigo-600 dark:text-indigo-400 font-bold hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all" onClick={() => setIsMobileMenuOpen(false)}>
                   <Layout size={20} /> Pano <span className="bg-amber-400 text-amber-950 text-[10px] px-2 py-0.5 rounded-full">YENİ</span>
@@ -376,11 +371,20 @@ export default function StudentDashboard() {
                     <div key={item.studentId} className={`flex items-center justify-between p-3 rounded-2xl transition-all ${item.studentId === user?.userId ? 'bg-indigo-50 dark:bg-indigo-600/40 border border-indigo-200 dark:border-indigo-400/30' : 'bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 hover:border-indigo-100 dark:hover:bg-white/10'}`}>
                       <div className="flex items-center gap-3">
                         <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-black ${item.rank === 1 ? 'bg-amber-400 text-amber-900' : 'bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-white/60'}`}>{item.rank}</div>
-                        <div className="w-8 h-8 rounded-full overflow-hidden border border-slate-200 dark:border-white/10 shrink-0">
-                          {item.profilePictureUrl ? <img src={getFileUrl(item.profilePictureUrl)} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full bg-slate-100 dark:bg-white/10 flex items-center justify-center"><User size={14} className="opacity-40" /></div>}
+                        <div 
+                          className="w-8 h-8 rounded-full overflow-hidden shrink-0 flex items-center justify-center bg-slate-100 dark:bg-white/5"
+                          style={{
+                            boxShadow: item.profileFrameColor ? `0 0 8px ${item.profileFrameColor}, inset 0 0 4px ${item.profileFrameColor}` : 'none',
+                            border: item.profileFrameColor ? `2px solid ${item.profileFrameColor}` : '1px solid rgba(148, 163, 184, 0.2)'
+                          }}
+                        >
+                          {item.profilePictureUrl ? <img src={getFileUrl(item.profilePictureUrl)} alt="" className="w-full h-full object-cover" /> : <User size={14} className="opacity-40" />}
                         </div>
                         <div>
-                          <p className={`text-sm font-bold truncate max-w-[100px] ${item.studentId === user?.userId ? 'text-indigo-700 dark:text-white' : 'text-slate-700 dark:text-white/80'}`}>{item.fullName}</p>
+                          <div className="flex flex-col">
+                            <p className={`text-sm font-bold truncate max-w-[100px] ${item.studentId === user?.userId ? 'text-indigo-700 dark:text-white' : 'text-slate-700 dark:text-white/80'}`}>{item.fullName}</p>
+                            {item.currentTitle && <span className="text-[8px] font-black uppercase tracking-widest text-amber-500 leading-none mb-0.5">{item.currentTitle}</span>}
+                          </div>
                           <p className="text-[10px] text-slate-400 dark:opacity-40 font-bold uppercase tracking-tighter">Seviye {item.level}</p>
                         </div>
                       </div>
@@ -480,7 +484,7 @@ export default function StudentDashboard() {
                           </div>
                         </div>
                         <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800 mt-auto">
-                          {enrollment.progressPercentage >= 100 || enrollment.isCourseCompleted ? (
+                          {enrollment.isCourseCompleted ? (
                             <button onClick={() => handleClaimCertificate(enrollment.enrollmentId)} className="bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-800 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 transition-colors px-4 py-2 rounded-lg text-sm font-bold flex items-center justify-center gap-2 w-full hover:-translate-y-0.5 shadow-sm"><Award size={16} /> Sertifika Al</button>
                           ) : (
                             <Link to={`/course/${enrollment.courseId}/detail`} className="bg-slate-50 dark:bg-slate-800/50 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 border border-slate-200 dark:border-slate-700 transition-colors px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-1 w-full justify-center">Devam Et <ChevronRight size={14} /></Link>

@@ -42,5 +42,11 @@ public class CourseConfiguration : IEntityTypeConfiguration<Course>
             .WithMany()
             .HasForeignKey(c => c.TeacherId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Course → FinalExam (Quiz) (1-to-1)
+        builder.HasOne(c => c.FinalExam)
+            .WithOne(q => q.Course)
+            .HasForeignKey<Quiz>(q => q.CourseId)
+            .OnDelete(DeleteBehavior.ClientCascade);
     }
 }

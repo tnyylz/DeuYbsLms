@@ -148,5 +148,56 @@ export const adminApi = {
 
   assignCourse: async (courseId: string, data: AdminCourseAssignmentDto): Promise<void> => {
     await api.post(`/Admin/courses/${courseId}/assign`, data);
+  },
+
+  getCourseAnalytics: async (courseId: string): Promise<AdminCourseAnalytics> => {
+    const response = await api.get(`/Admin/courses/${courseId}/analytics`);
+    return response.data;
   }
 };
+
+export interface AdminLessonAnalytics {
+  lessonId: string;
+  title: string;
+  orderIndex: number;
+  hasQuiz: boolean;
+  totalViews: number;
+  quizPassCount: number;
+  quizPassRate: number;
+  completionRate: number;
+}
+
+export interface AdminStudentSegmentation {
+  segment0to20: number;
+  segment21to50: number;
+  segment51to80: number;
+  segment81to99: number;
+  segment100: number;
+}
+
+export interface AdminCourseStudent {
+  fullName: string;
+  studentNumber: string;
+  email: string;
+  completionPercentage: number;
+  failedQuizAttempts: number;
+  enrolledAt: string;
+}
+
+export interface AdminCourseAnalytics {
+  courseId: string;
+  courseTitle: string;
+  teacherName: string;
+  lessonCount: number;
+  createdAt: string;
+  totalEnrolled: number;
+  totalCompleted: number;
+  completionRate: number;
+  averageProgressRate: number;
+  finalExamPassRate: number;
+  lessons: AdminLessonAnalytics[];
+  monthlyEnrollmentTrends: MonthlyRegistration[];
+  monthlyCompletionTrends: MonthlyRegistration[];
+  segmentation: AdminStudentSegmentation;
+  students: AdminCourseStudent[];
+}

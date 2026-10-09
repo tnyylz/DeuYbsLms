@@ -49,6 +49,9 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // Force EF Core to use 'dbo' schema (fixes shared hosting schema mismatch)
+        modelBuilder.HasDefaultSchema("dbo");
+
         // Infrastructure assembly'indeki tüm IEntityTypeConfiguration'ları otomatik uygula
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
         base.OnModelCreating(modelBuilder);

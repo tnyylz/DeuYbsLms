@@ -41,6 +41,8 @@ public class AdminService : IAdminService
 
         var studentProfiles = await _context.StudentProfiles
             .Include(s => s.AppUser)
+            .Include(s => s.Inventory)
+                .ThenInclude(i => i.ShopItem)
             .ToListAsync();
 
         // Top Courses
@@ -82,13 +84,16 @@ public class AdminService : IAdminService
 
         // Student Leaderboard (Top 10)
         var studentLeaderboard = studentProfiles
-            .OrderByDescending(s => s.TotalXp)
+            .OrderByDescending(s => s.CurrentLevel)
+            .ThenByDescending(s => s.TotalXp)
             .Take(10)
             .Select(s => new StudentLeaderboardDto
             {
                 FullName = s.AppUser != null ? $"{s.AppUser.FirstName} {s.AppUser.LastName}" : "Bilinmeyen Öğrenci",
                 TotalXp = s.TotalXp,
-                Level = s.CurrentLevel
+                Level = s.CurrentLevel,
+                ProfileFrameColor = s.Inventory.FirstOrDefault(i => i.IsEquipped && i.ShopItem.Type == ShopItemType.ProfileFrame)?.ShopItem.Metadata,
+                CurrentTitle = s.Inventory.FirstOrDefault(i => i.IsEquipped && i.ShopItem.Type == ShopItemType.SpecialTitle)?.ShopItem.Metadata
             }).ToList();
 
         // Recent Activities (Combining recent users and recent enrollments)
@@ -296,5 +301,192 @@ public class AdminService : IAdminService
             throw new Exception("Kurs bulunamadı.");
 
         await _courseRepository.DeleteAsync(course);
+    }
+
+    public async Task<AdminCourseAnalyticsDto> GetCourseAnalyticsAsync(Guid courseId)
+    {
+        var course = await _context.Courses
+            .Include(c => c.Teacher)
+            .Include(c => c.Lessons)
+                .ThenInclude(l => l.Quiz)
+            .Include(c => c.FinalExam)
+            .FirstOrDefaultAsync(c => c.Id == courseId);
+
+        if (course == null)
+            throw new Exception("Kurs bulunamadı.");
+
+        var enrollments = await _context.CourseEnrollments
+            .Include(e => e.Student)
+                .ThenInclude(s => s.StudentProfile)
+            .Include(e => e.LessonProgresses)
+            .Include(e => e.Certificate)
+            .Where(e => e.CourseId == courseId)
+            .ToListAsync();
+
+        int totalEnrolled = enrollments.Count;
+        int totalCompleted = enrollments.Count(e => e.IsCourseCompleted);
+        double completionRate = totalEnrolled > 0 ? (double)totalCompleted / totalEnrolled * 100 : 0;
+
+        double totalProgressSum = 0;
+        int segment0to20 = 0;
+        int segment21to50 = 0;
+        int segment51to80 = 0;
+        int segment81to99 = 0;
+        int segment100 = 0;
+
+        var totalLessonsCount = course.Lessons.Count;
+
+        foreach (var enrollment in enrollments)
+        {
+            double progress = 0;
+            if (totalLessonsCount > 0)
+            {
+                int completedLessons = course.Lessons.Count(l =>
+                {
+                    var p = enrollment.LessonProgresses.FirstOrDefault(x => x.LessonId == l.Id);
+                    if (p == null) return false;
+                    return l.Quiz == null ? p.IsVideoCompleted : p.IsQuizPassed;
+                });
+                
+                progress = (double)completedLessons / totalLessonsCount * 100;
+                
+                if (enrollment.IsCourseCompleted)
+                {
+                    progress = 100;
+                }
+                else if (progress >= 100)
+                {
+                    progress = 99; // finished lessons but final exam not complete
+                }
+            }
+            else
+            {
+                if (enrollment.IsCourseCompleted) progress = 100;
+            }
+
+            totalProgressSum += progress;
+
+            if (progress <= 20) segment0to20++;
+            else if (progress <= 50) segment21to50++;
+            else if (progress <= 80) segment51to80++;
+            else if (progress < 100) segment81to99++;
+            else segment100++;
+        }
+
+        double averageProgressRate = totalEnrolled > 0 ? totalProgressSum / totalEnrolled : 0;
+
+        // Final Exam Pass Rate
+        int finalExamPassedCount = enrollments.Count(e => e.IsFinalExamPassed);
+        int finalExamAttemptCount = enrollments.Count(e => e.LastFinalExamScore.HasValue || e.IsFinalExamPassed);
+        double finalExamPassRate = finalExamAttemptCount > 0 ? (double)finalExamPassedCount / finalExamAttemptCount * 100 : 0;
+
+        // Lesson by Lesson
+        var lessonsAnalytics = new List<AdminLessonAnalyticsDto>();
+        var sortedLessons = course.Lessons.OrderBy(l => l.OrderIndex).ToList();
+
+        foreach (var lesson in sortedLessons)
+        {
+            var progressRecords = enrollments
+                .SelectMany(e => e.LessonProgresses)
+                .Where(lp => lp.LessonId == lesson.Id)
+                .ToList();
+
+            int totalViews = progressRecords.Count(lp => lp.IsVideoCompleted);
+            int quizPassCount = progressRecords.Count(lp => lp.IsQuizPassed);
+            double quizPassRate = totalViews > 0 ? (double)quizPassCount / totalViews * 100 : 0;
+            double lessonCompletionRate = totalEnrolled > 0 ? (double)totalViews / totalEnrolled * 100 : 0;
+
+            lessonsAnalytics.Add(new AdminLessonAnalyticsDto
+            {
+                LessonId = lesson.Id,
+                Title = lesson.Title,
+                OrderIndex = lesson.OrderIndex,
+                HasQuiz = lesson.Quiz != null,
+                TotalViews = totalViews,
+                QuizPassCount = quizPassCount,
+                QuizPassRate = Math.Round(quizPassRate, 1),
+                CompletionRate = Math.Round(lessonCompletionRate, 1)
+            });
+        }
+
+        // Monthly trends over last 6 months
+        var monthlyEnrollmentTrends = new List<MonthlyRegistrationDto>();
+        var monthlyCompletionTrends = new List<MonthlyRegistrationDto>();
+
+        for (int i = 5; i >= 0; i--)
+        {
+            var targetMonth = DateTime.UtcNow.AddMonths(-i);
+            var monthName = targetMonth.ToString("MMM yyyy");
+
+            var enrollCount = enrollments.Count(e => e.EnrolledAt.Year == targetMonth.Year && e.EnrolledAt.Month == targetMonth.Month);
+            monthlyEnrollmentTrends.Add(new MonthlyRegistrationDto { Month = monthName, Count = enrollCount });
+
+            var certCount = enrollments.Count(e => e.Certificate != null && e.Certificate.IssuedAt.Year == targetMonth.Year && e.Certificate.IssuedAt.Month == targetMonth.Month);
+            monthlyCompletionTrends.Add(new MonthlyRegistrationDto { Month = monthName, Count = certCount });
+        }
+
+        // Students list (All enrolled students)
+        var students = new List<AdminCourseStudentDto>();
+
+        foreach (var enrollment in enrollments)
+        {
+            double progress = 0;
+            if (totalLessonsCount > 0)
+            {
+                int completed = enrollment.LessonProgresses.Count(lp =>
+                {
+                    var l = course.Lessons.FirstOrDefault(x => x.Id == lp.LessonId);
+                    if (l == null) return false;
+                    return l.Quiz == null ? lp.IsVideoCompleted : lp.IsQuizPassed;
+                });
+                progress = (double)completed / totalLessonsCount * 100;
+                if (enrollment.IsCourseCompleted) progress = 100;
+            }
+            else
+            {
+                if (enrollment.IsCourseCompleted) progress = 100;
+            }
+
+            int failedQuizAttempts = enrollment.LessonProgresses.Sum(lp => lp.QuizAttemptCount);
+
+            var student = enrollment.Student;
+            var studentProfile = student?.StudentProfile;
+
+            students.Add(new AdminCourseStudentDto
+            {
+                FullName = student != null ? $"{student.FirstName} {student.LastName}" : "Bilinmeyen Öğrenci",
+                StudentNumber = studentProfile?.StudentNumber ?? "-",
+                Email = student?.Email ?? "-",
+                CompletionPercentage = (int)Math.Round(progress),
+                FailedQuizAttempts = failedQuizAttempts,
+                EnrolledAt = enrollment.EnrolledAt
+            });
+        }
+
+        return new AdminCourseAnalyticsDto
+        {
+            CourseId = course.Id,
+            CourseTitle = course.Title,
+            TeacherName = course.Teacher?.FullName ?? "Bilinmiyor",
+            LessonCount = totalLessonsCount,
+            CreatedAt = course.CreatedAt,
+            TotalEnrolled = totalEnrolled,
+            TotalCompleted = totalCompleted,
+            CompletionRate = Math.Round(completionRate, 1),
+            AverageProgressRate = Math.Round(averageProgressRate, 1),
+            FinalExamPassRate = Math.Round(finalExamPassRate, 1),
+            Lessons = lessonsAnalytics,
+            MonthlyEnrollmentTrends = monthlyEnrollmentTrends,
+            MonthlyCompletionTrends = monthlyCompletionTrends,
+            Segmentation = new AdminStudentSegmentationDto
+            {
+                Segment0to20 = segment0to20,
+                Segment21to50 = segment21to50,
+                Segment51to80 = segment51to80,
+                Segment81to99 = segment81to99,
+                Segment100 = segment100
+            },
+            Students = students.OrderBy(s => s.FullName).ToList()
+        };
     }
 }

@@ -15,7 +15,7 @@ export default function LandingPage() {
             <div className="bg-indigo-50 dark:bg-indigo-900/40 p-2 rounded-lg transition-colors">
               <BookOpen className="text-indigo-600 dark:text-indigo-400" size={24} />
             </div>
-            <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white">DEÜ YBS <span className="text-indigo-600 dark:text-indigo-400">LMS</span></span>
+            <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-white">YBS <span className="text-indigo-600 dark:text-indigo-400">Portal</span></span>
           </div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
@@ -89,7 +89,7 @@ export default function LandingPage() {
       <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 px-6 py-8 text-center transition-colors">
         <div className="flex items-center justify-center gap-2 mb-4">
            <BookOpen className="text-slate-300 dark:text-slate-700" size={20} />
-           <span className="font-bold text-slate-400 dark:text-slate-600 uppercase tracking-widest text-xs">DEÜ YBS LMS</span>
+           <span className="font-bold text-slate-400 dark:text-slate-600 uppercase tracking-widest text-xs">YBS PORTAL</span>
         </div>
         <p className="text-slate-500 dark:text-slate-500 font-medium text-sm">
           © {new Date().getFullYear()} DEÜ Yönetim Bilişim Sistemleri — Tüm hakları saklıdır.

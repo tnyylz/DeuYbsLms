@@ -56,7 +56,7 @@ export default function LoginPage() {
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2 text-slate-900 dark:text-white bg-white dark:bg-slate-900 px-5 py-2.5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-md transition-all">
             <BookOpen className="text-indigo-600 dark:text-indigo-400" size={24} />
-            <span className="font-bold text-xl">DEÜ YBS <span className="text-indigo-600 dark:text-indigo-400">LMS</span></span>
+            <span className="font-bold text-xl">YBS <span className="text-indigo-600 dark:text-indigo-400">Portal</span></span>
           </Link>
           <p className="text-slate-500 dark:text-slate-400 mt-4 text-base font-medium">Hesabınıza giriş yapın</p>
         </div>

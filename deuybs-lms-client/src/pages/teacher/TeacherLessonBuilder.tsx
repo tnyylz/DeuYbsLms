@@ -148,6 +148,7 @@ export default function TeacherLessonBuilder() {
         // Save quiz if exists
         if (questions.length > 0) {
             await createOrUpdateQuizApi({
+                title: 'Ders Quizi',
                 lessonId,
                 minimumPassingScore: minPassingScore,
                 questions
@@ -161,6 +162,7 @@ export default function TeacherLessonBuilder() {
         // Save quiz if exists
         if (questions.length > 0) {
             await createOrUpdateQuizApi({
+                title: 'Ders Quizi',
                 lessonId: newLessonId,
                 minimumPassingScore: minPassingScore,
                 questions

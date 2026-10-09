@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   User, Mail, Camera, Save, Award, TrendingUp, BookOpen, 
-  Trophy, ChevronLeft, Loader2, CheckCircle, Zap, ShieldCheck
+  Trophy, ChevronLeft, Loader2, CheckCircle, Zap, ShieldCheck, Lock
 } from 'lucide-react';
 import { getProfileApi, updateProfileApi } from '../../api/profile.api';
 import { uploadThumbnailApi } from '../../api/teacher.api';
@@ -27,6 +27,7 @@ export default function ProfilePage() {
   // ... (existing state)
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
   const [studentNumber, setStudentNumber] = useState('');
   const [profilePic, setProfilePic] = useState('');
   
@@ -46,6 +47,7 @@ export default function ProfilePage() {
         setLastName(data.lastName);
         setStudentNumber(data.studentNumber || '');
         setProfilePic(data.profilePictureUrl || '');
+        setEmail(data.email);
       } catch (err) {
         console.error('Profile load error:', err);
         setError('Profil bilgileri yüklenemedi.');
@@ -80,6 +82,7 @@ export default function ProfilePage() {
       await updateProfileApi({
         firstName,
         lastName,
+        email,
         studentNumber,
         profilePictureUrl: profilePic
       });
@@ -87,14 +90,23 @@ export default function ProfilePage() {
       if (authUser) {
         setAuth({
           ...authUser,
+          email,
           fullName: `${firstName} ${lastName}`
         }, localStorage.getItem('token') || '');
       }
 
+      if (profile) {
+        setProfile({
+          ...profile,
+          email,
+          profilePictureUrl: profilePic
+        });
+      }
+
       setSuccess('Profil başarıyla güncellendi.');
       setTimeout(() => setSuccess(''), 3000);
-    } catch (err) {
-      setError('Profil güncellenirken bir hata oluştu.');
+    } catch (err: any) {
+      setError(err.response?.data?.message || err.response?.data || 'Profil güncellenirken bir hata oluştu.');
     } finally {
       setSaving(false);
     }
@@ -257,42 +269,77 @@ export default function ProfilePage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-3">
-                <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Adınız</label>
-                <input 
-                  type="text" 
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl px-6 py-4 font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-100/50 dark:focus:ring-indigo-900/30 transition-all border-l-4 border-l-indigo-500"
-                />
+                <div className="flex items-center gap-1.5 ml-1">
+                  <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Adınız</label>
+                  <Lock size={12} className="text-slate-400 dark:text-slate-500" />
+                </div>
+                <div className="relative flex items-center">
+                  <input 
+                    type="text" 
+                    value={firstName}
+                    readOnly
+                    className="w-full bg-slate-100/60 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 py-4 font-bold text-slate-500 dark:text-slate-400 cursor-not-allowed focus:outline-none border-l-4 border-l-slate-400 dark:border-l-slate-600 transition-all"
+                  />
+                  <Lock size={16} className="absolute right-6 text-slate-400 dark:text-slate-600 pointer-events-none" />
+                </div>
               </div>
               <div className="space-y-3">
-                <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Soyadınız</label>
-                <input 
-                  type="text" 
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl px-6 py-4 font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-100/50 dark:focus:ring-indigo-900/30 transition-all border-l-4 border-l-indigo-500"
-                />
+                <div className="flex items-center gap-1.5 ml-1">
+                  <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Soyadınız</label>
+                  <Lock size={12} className="text-slate-400 dark:text-slate-500" />
+                </div>
+                <div className="relative flex items-center">
+                  <input 
+                    type="text" 
+                    value={lastName}
+                    readOnly
+                    className="w-full bg-slate-100/60 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 py-4 font-bold text-slate-500 dark:text-slate-400 cursor-not-allowed focus:outline-none border-l-4 border-l-slate-400 dark:border-l-slate-600 transition-all"
+                  />
+                  <Lock size={16} className="absolute right-6 text-slate-400 dark:text-slate-600 pointer-events-none" />
+                </div>
               </div>
               <div className="space-y-3">
-                <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest ml-1">Öğrenci Numaranız</label>
-                <input 
-                  type="text" 
-                  value={studentNumber}
-                  onChange={(e) => setStudentNumber(e.target.value)}
-                  placeholder="Örn: 2023501001"
-                  className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl px-6 py-4 font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-100/50 dark:focus:ring-indigo-900/30 transition-all border-l-4 border-l-indigo-500"
-                />
+                <div className="flex items-center gap-1.5 ml-1">
+                  <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Öğrenci Numaranız</label>
+                  <Lock size={12} className="text-slate-400 dark:text-slate-500" />
+                </div>
+                <div className="relative flex items-center">
+                  <input 
+                    type="text" 
+                    value={studentNumber}
+                    readOnly
+                    placeholder="Girilmemiş"
+                    className="w-full bg-slate-100/60 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 py-4 font-bold text-slate-500 dark:text-slate-400 cursor-not-allowed focus:outline-none border-l-4 border-l-slate-400 dark:border-l-slate-600 transition-all"
+                  />
+                  <Lock size={16} className="absolute right-6 text-slate-400 dark:text-slate-600 pointer-events-none" />
+                </div>
               </div>
-            </div>
- 
-            <div className="mt-8 p-6 bg-slate-50 dark:bg-slate-800/40 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 flex items-center gap-4 group">
-              <div className="p-3 bg-white dark:bg-slate-800 rounded-2xl text-slate-400 dark:text-slate-500 group-hover:text-indigo-500 transition-colors shadow-sm">
-                <Mail size={20} />
+              <div className="space-y-3">
+                <div className="flex items-center gap-1.5 ml-1">
+                  <label className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Sınıfınız</label>
+                  <Lock size={12} className="text-slate-400 dark:text-slate-500" />
+                </div>
+                <div className="relative flex items-center">
+                  <input 
+                    type="text" 
+                    value={profile ? `${profile.gradeLevel}. Sınıf` : '1. Sınıf'}
+                    readOnly
+                    className="w-full bg-slate-100/60 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 rounded-2xl px-6 py-4 font-bold text-slate-500 dark:text-slate-400 cursor-not-allowed focus:outline-none border-l-4 border-l-slate-400 dark:border-l-slate-600 transition-all"
+                  />
+                  <Lock size={16} className="absolute right-6 text-slate-400 dark:text-slate-600 pointer-events-none" />
+                </div>
               </div>
-              <div>
-                <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">E-posta Adresi (Değiştirilemez)</p>
-                <p className="font-bold text-slate-600 dark:text-slate-300">{profile?.email}</p>
+              <div className="space-y-3 md:col-span-2">
+                <label className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest ml-1">E-posta Adresi</label>
+                <div className="relative flex items-center">
+                  <Mail className="absolute left-6 text-indigo-500 dark:text-indigo-400 pointer-events-none animate-pulse" size={20} />
+                  <input 
+                    type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl pl-16 pr-6 py-4 font-bold text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-4 focus:ring-indigo-100/50 dark:focus:ring-indigo-900/30 transition-all border-l-4 border-l-indigo-500"
+                  />
+                </div>
               </div>
             </div>
 

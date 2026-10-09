@@ -9,4 +9,5 @@ public interface ITeacherService
     Task<TeacherDashboardDto> GetDashboardStatsAsync(Guid teacherId);
     Task<List<StudentAnalyticsDto>> GetCourseAnalyticsAsync(Guid courseId);
     Task<List<StudentAnalyticsDto>> GetAllStudentsAnalyticsAsync(Guid teacherId);
+    Task<bool> IsTeacherCourseOwnerAsync(Guid courseId, Guid teacherId);
 }

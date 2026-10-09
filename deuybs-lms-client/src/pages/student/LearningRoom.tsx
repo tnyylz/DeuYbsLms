@@ -4,14 +4,15 @@ import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   BookOpen, ChevronLeft, ChevronRight, Loader2, HelpCircle, 
-  Lock, CheckCircle, Zap, Info, Clock, Play, FileDown 
+  Lock, CheckCircle, Zap, Info, Clock, Play, FileDown, Target 
 } from 'lucide-react';
 import { getFileUrl } from '../../utils/fileUtils';
 import VideoPlayer from '../../components/VideoPlayer';
 import QuizModal from '../../components/QuizModal';
 import { LevelUpModal } from '../../components/shared/LevelUpModal';
-import { getCourseDetailApi, getQuizQuestionsApi } from '../../api/courses.api';
-import { getCourseProgressApi, completeVideoApi, submitQuizApi } from '../../api/progress.api';
+import { getCourseDetailApi, getQuizQuestionsApi, getCourseQuizQuestionsApi } from '../../api/courses.api';
+import { getCourseProgressApi, completeVideoApi } from '../../api/progress.api';
+import axiosInstance from '../../api/axiosInstance';
 import type { 
   CourseDetailDto, LessonDto, LessonProgressDto, 
   QuestionDto, QuizResultDto, CourseProgressDto 
@@ -19,7 +20,7 @@ import type {
 
 import toast from 'react-hot-toast';
 
-export default function LearningRoom() {
+export default function LearningRoom({ isFinalExam = false }: { isFinalExam?: boolean }) {
   const { courseId, lessonId } = useParams<{ courseId: string; lessonId: string }>();
   const navigate = useNavigate();
 
@@ -37,7 +38,7 @@ export default function LearningRoom() {
   const [newLevel, setNewLevel] = useState(1);
 
   const fetchAll = useCallback(async () => {
-    if (!courseId || !lessonId) return;
+    if (!courseId) return;
     try {
       const [courseData, progressData] = await Promise.all([
         getCourseDetailApi(courseId),
@@ -45,20 +46,25 @@ export default function LearningRoom() {
       ]);
       setCourse(courseData);
 
-      const currentLesson = courseData.lessons.find(l => l.id === lessonId);
-      setLesson(currentLesson ?? null);
+      if (!isFinalExam && lessonId) {
+          const currentLesson = courseData.lessons.find(l => l.id === lessonId);
+          setLesson(currentLesson ?? null);
 
-      const currentProgress = progressData.lessonProgresses.find(lp => lp.lessonId === lessonId);
-      setLessonProgress(currentProgress ?? null);
+          const currentProgress = progressData.lessonProgresses.find(lp => lp.lessonId === lessonId);
+          setLessonProgress(currentProgress ?? null);
+      } else {
+          setLesson(null);
+          setLessonProgress(null);
+      }
       setProgress(progressData);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
-  }, [courseId, lessonId]);
+  }, [courseId, lessonId, isFinalExam]);
 
   useEffect(() => { 
     setLoading(true);
     fetchAll(); 
-  }, [courseId, lessonId, fetchAll]);
+  }, [courseId, lessonId, isFinalExam, fetchAll]);
 
   const handleVideoComplete = async () => {
     if (!lessonId) return;
@@ -87,17 +93,17 @@ export default function LearningRoom() {
   };
 
   const handleOpenQuiz = async () => {
-    if (!lessonId) return;
-    const loadingToast = toast.loading('Quiz hazırlanıyor...');
+    if (!lessonId && !isFinalExam) return;
+    const loadingToast = toast.loading(isFinalExam ? 'Final sınavı hazırlanıyor...' : 'Quiz hazırlanıyor...');
     setQuizLoading(true);
     try {
-      const q = await getQuizQuestionsApi(lessonId);
+      const q = isFinalExam ? await getCourseQuizQuestionsApi(courseId!) : await getQuizQuestionsApi(lessonId!);
       setQuestions(q);
       setShowQuiz(true);
       toast.dismiss(loadingToast);
     } catch (err) { 
       console.error(err);
-      toast.error('Quiz yüklenirken bir sorun oluştu.', { id: loadingToast });
+      toast.error(isFinalExam ? 'Final sınavı yüklenirken bir sorun oluştu.' : 'Quiz yüklenirken bir sorun oluştu.', { id: loadingToast });
     }
     finally { setQuizLoading(false); }
   };
@@ -109,9 +115,18 @@ export default function LearningRoom() {
         questionId,
         selectedAnswerOptionId,
       }));
-      const result = await submitQuizApi(lessonId!, payload);
+      
+      // The API submitQuizApi now handles both courseId and lessonId depending on what we pass. 
+      // But submitQuizApi takes (lessonId, payload), and actually we updated it or we need to update submitQuizApi?
+      // Wait, let's just pass lessonId as empty for final exam and we can fix submitQuizApi.
+      const submitData: any = { answers: payload };
+      if (isFinalExam) submitData.courseId = courseId;
+      else submitData.lessonId = lessonId;
+      
+      const result = await axiosInstance.post('/Progress/submit-quiz', submitData).then(r => r.data.data ?? r.data);
+      
       await fetchAll();
-      toast.success(result.isPassed ? 'Tebrikler, quizi geçtiniz! 🎉' : 'Üzgünüz, geçme puanının altında kaldınız. ❌', { id: loadingToast });
+      toast.success(result.isPassed ? 'Tebrikler, başarıyla geçtiniz! 🎉' : 'Üzgünüz, geçme puanının altında kaldınız. ❌', { id: loadingToast });
       
       if (result.xpResult && result.isPassed) {
         toast.success(`+${result.xpResult.xpAwarded} XP Kazandın!`, {
@@ -128,7 +143,7 @@ export default function LearningRoom() {
       return result;
     } catch (err: any) {
       console.error(err);
-      toast.error('Quiz gönderilirken bir hata oluştu.', { id: loadingToast });
+      toast.error('Gönderilirken bir hata oluştu.', { id: loadingToast });
       throw err;
     }
   };
@@ -139,7 +154,16 @@ export default function LearningRoom() {
     if (idToNavigate) {
       navigate(`/course/${courseId}/lesson/${idToNavigate}`);
     } else {
-      navigate(`/course/${courseId}/detail`);
+      if (isFinalExam && progress?.isFinalExamPassed) {
+          navigate(`/course/${courseId}/detail`);
+      } else if (!isFinalExam && course?.hasFinalExam && progress?.completedLessons === course?.lessons.length) {
+          navigate(`/course/${courseId}/final-exam`);
+      } else {
+          if (!isFinalExam && course?.hasFinalExam && progress && progress.completedLessons < course.lessons.length) {
+              toast.error(`Tebrikler bu dersi bitirdiniz! Ancak final sınavına girmek için kurstaki tüm dersleri tamamlamalısınız. (${progress.completedLessons} / ${course.lessons.length} tamamlandı)`);
+          }
+          navigate(`/course/${courseId}/detail`);
+      }
     }
   };
 
@@ -161,7 +185,7 @@ export default function LearningRoom() {
     );
   }
 
-  if (!course || !lesson || !progress) {
+  if (!course || (!lesson && !isFinalExam) || !progress) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-slate-900 dark:text-white transition-colors duration-300">
         <div className="bg-white dark:bg-slate-900 p-8 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800 text-center">
@@ -173,9 +197,9 @@ export default function LearningRoom() {
     );
   }
 
-  const videoCompleted = lessonProgress?.isVideoCompleted ?? false;
-  const quizPassed = lessonProgress?.isQuizPassed ?? false;
-  const isLessonFinished = videoCompleted && (!lesson.hasQuiz || quizPassed);
+  const videoCompleted = isFinalExam ? true : (lessonProgress?.isVideoCompleted ?? false);
+  const quizPassed = isFinalExam ? (progress.isFinalExamPassed ?? false) : (lessonProgress?.isQuizPassed ?? false);
+  const isLessonFinished = isFinalExam ? quizPassed : (videoCompleted && (!lesson?.hasQuiz || quizPassed));
   const nextLessonId = getNextLessonId();
 
   return (
@@ -197,8 +221,8 @@ export default function LearningRoom() {
                 {course.title}
               </h1>
               <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wider">Mevcut Ders:</span>
-                <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold truncate">{lesson.title}</span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 font-medium uppercase tracking-wider">{isFinalExam ? 'Değerlendirme:' : 'Mevcut Ders:'}</span>
+                <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-bold truncate">{isFinalExam ? 'Final Sınavı' : lesson?.title}</span>
               </div>
             </div>
           </div>
@@ -232,8 +256,50 @@ export default function LearningRoom() {
         <main className="flex-1 overflow-y-visible md:overflow-y-auto bg-slate-50 dark:bg-slate-950 custom-scrollbar relative">
           <div className="max-w-5xl mx-auto p-4 md:p-8 space-y-8">
             
-            {/* Video Section or Document Only */}
-            {lesson.videoUrl ? (
+            {/* Content Display */}
+            {isFinalExam ? (
+                <div className="bg-violet-50 dark:bg-violet-900/10 rounded-[32px] flex flex-col items-center justify-center p-12 py-20 shadow-xl border border-violet-200 dark:border-violet-800/30 transition-colors text-center relative overflow-hidden">
+                   <div className="absolute top-0 right-0 w-64 h-64 bg-violet-400/10 blur-3xl rounded-full mix-blend-multiply"></div>
+                   <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-400/10 blur-3xl rounded-full mix-blend-multiply"></div>
+                   
+                   <div className="w-24 h-24 bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-400 rounded-full flex items-center justify-center mb-8 shadow-md border-4 border-white dark:border-slate-800 z-10">
+                      <Target size={40} />
+                   </div>
+                   <h3 className="text-3xl md:text-5xl font-black text-slate-800 dark:text-white mb-6 tracking-tight z-10">Kurs Final Sınavı</h3>
+                   <p className="text-lg font-medium text-slate-600 dark:text-slate-400 mb-12 max-w-xl leading-relaxed z-10">
+                     Tüm dersleri tamamladınız! Kurs sertifikanızı alabilmek için son olarak bu değerlendirme sınavını başarıyla geçmeniz gerekmektedir.
+                   </p>
+                   
+                   <div className="z-10 w-full flex justify-center">
+                   {quizPassed ? (
+                      <div className="px-8 py-5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-bold rounded-2xl flex items-center justify-center gap-3 shadow-sm border border-emerald-200 dark:border-emerald-800/50">
+                        <CheckCircle size={28} />
+                        Sınavı Başarıyla Geçtiniz!
+                      </div>
+                   ) : (
+                      <button 
+                        onClick={handleOpenQuiz}
+                        disabled={quizLoading || progress?.completedLessons < course?.lessons.length}
+                        className={`px-12 py-5 font-bold rounded-2xl flex items-center justify-center gap-3 transition-all shadow-xl hover:-translate-y-1 text-lg ${
+                          progress?.completedLessons < course?.lessons.length 
+                           ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
+                           : 'bg-violet-600 hover:bg-violet-700 text-white shadow-violet-200 dark:shadow-none'
+                        }`}
+                      >
+                         {quizLoading ? <Loader2 size={24} className="animate-spin" /> : <Play size={24} />}
+                         {quizLoading ? 'Hazırlanıyor...' : 'Sınava Başla'}
+                      </button>
+                   )}
+                   </div>
+                   
+                   {!quizPassed && progress?.completedLessons < course?.lessons.length && (
+                      <div className="mt-8 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800/50 rounded-2xl flex items-center gap-3 text-amber-700 dark:text-amber-400 text-sm font-medium z-10">
+                        <Info size={18} className="shrink-0" />
+                        <span>Final sınavına girmek için tüm dersleri tamamlamalısınız.</span>
+                      </div>
+                   )}
+                </div>
+            ) : lesson?.videoUrl ? (
                 <div className="aspect-video bg-black rounded-2xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800 relative group transition-colors">
                   <VideoPlayer 
                     lessonId={lesson.id}
@@ -242,7 +308,7 @@ export default function LearningRoom() {
                     onVideoComplete={handleVideoComplete} 
                   />
                 </div>
-            ) : lesson.resourceUrl ? (
+            ) : lesson?.resourceUrl ? (
                <div className="aspect-video bg-slate-100 dark:bg-slate-900 rounded-2xl flex flex-col items-center justify-center shadow-xl border border-slate-200 dark:border-slate-800 transition-colors px-6 text-center">
                   <div className="w-20 h-20 bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded-full flex items-center justify-center mb-6 shadow-md">
                      <FileDown size={32} />
@@ -274,7 +340,7 @@ export default function LearningRoom() {
             )}
 
             {/* Supplemental Document (if video also exists) */}
-            {lesson.videoUrl && lesson.resourceUrl && (
+            {!isFinalExam && lesson?.videoUrl && lesson?.resourceUrl && (
                <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800/40 rounded-[28px] p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-sm">
                   <div className="flex items-center gap-5">
                      <div className="bg-white dark:bg-slate-800 p-4 rounded-full text-emerald-600 dark:text-emerald-400 shadow-md">
@@ -292,6 +358,7 @@ export default function LearningRoom() {
             )}
 
             {/* Lesson Info & Actions */}
+            {!isFinalExam && lesson && (
             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[32px] p-8 space-y-8 shadow-sm transition-colors">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="space-y-2">
@@ -377,6 +444,7 @@ export default function LearningRoom() {
                 </div>
               )}
             </div>
+            )}
           </div>
         </main>
 
@@ -435,6 +503,40 @@ export default function LearningRoom() {
                 </button>
               );
             })}
+            
+            {course.hasFinalExam && (
+              <button
+                  onClick={() => {
+                    if (progress.completedLessons < course.lessons.length) {
+                      toast.error(`Final sınavına girmek için tüm dersleri tamamlamalısınız. (${progress.completedLessons} / ${course.lessons.length} tamamlandı)`);
+                    } else {
+                      navigate(`/course/${courseId}/final-exam`);
+                    }
+                  }}
+                  className={`w-full p-5 flex items-start gap-4 transition-all border-b border-slate-200 dark:border-slate-800 text-left group relative ${
+                    isFinalExam ? 'bg-violet-50 dark:bg-violet-900/40 border-l-4 border-l-violet-600' : 'hover:bg-slate-100 dark:hover:bg-slate-800 bg-white dark:bg-slate-900'
+                  } ${progress.completedLessons < course.lessons.length && !isFinalExam ? 'opacity-60 cursor-pointer grayscale' : 'cursor-pointer'}`}
+              >
+                  <div className={`mt-1 shrink-0 w-6 h-6 rounded-full flex items-center justify-center border-2 transition-colors ${
+                    progress.isFinalExamPassed ? 'bg-emerald-500 border-emerald-500 text-white' : 
+                    isFinalExam ? 'border-violet-600 text-violet-600' : 
+                    progress.completedLessons < course.lessons.length ? 'border-slate-300 text-slate-300' : 'border-violet-400 text-violet-500'
+                  }`}>
+                    {progress.isFinalExamPassed ? <CheckCircle size={14} /> : progress.completedLessons < course.lessons.length ? <Lock size={12} /> : <Target size={14} />}
+                  </div>
+                  
+                  <div className="min-w-0">
+                    <p className={`text-sm font-bold truncate transition-colors ${isFinalExam ? 'text-violet-600 dark:text-violet-400' : progress.completedLessons >= course.lessons.length ? 'text-slate-700 dark:text-slate-200' : 'text-slate-400 dark:text-slate-600'}`}>
+                      Final Sınavı
+                    </p>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className={`text-[10px] font-black px-1.5 py-0.5 rounded border ${
+                          progress.isFinalExamPassed ? 'bg-emerald-50 border-emerald-100 text-emerald-600' : 'bg-violet-50 border-violet-100 text-violet-600'
+                        }`}>ZORUNLU</span>
+                    </div>
+                  </div>
+              </button>
+            )}
           </div>
         </aside>
       </div>

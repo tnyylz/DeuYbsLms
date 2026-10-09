@@ -22,4 +22,7 @@ public class CourseEnrollment : BaseEntity
 
     public ICollection<LessonProgress> LessonProgresses { get; set; } = new List<LessonProgress>();
     public Certificate? Certificate { get; set; }
+
+    public bool IsFinalExamPassed { get; set; } = false;
+    public double? LastFinalExamScore { get; set; }
 }

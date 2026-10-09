@@ -63,23 +63,12 @@ export default function TeacherDashboard() {
               <BookOpen className="text-white" size={22} />
             </div>
             <div className="hidden sm:block">
-              <span className="font-bold text-lg tracking-tight block">DEÜ YBS <span className="text-indigo-600">LMS</span></span>
+              <span className="font-bold text-lg tracking-tight block">YBS <span className="text-indigo-600">Portal</span></span>
               <span className="text-[10px] uppercase tracking-widest text-indigo-500 font-bold">Eğitmen Portalı</span>
             </div>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-6">
-            <div className="hidden md:flex items-center gap-6">
-              <Link to="/teacher/analytics" className="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all text-sm font-semibold flex items-center gap-2 group">
-                <BarChart2 size={16} className="group-hover:text-indigo-600 transition-colors" /> Analitik
-              </Link>
-              <div className="h-4 w-px bg-slate-200 dark:bg-slate-700" />
-              <Link to="/teacher/learning-paths" className="text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all text-sm font-semibold flex items-center gap-2 group">
-                <Layers size={16} className="group-hover:text-indigo-600 transition-colors" /> Yol Haritaları
-              </Link>
-              <div className="h-4 w-px bg-slate-200 dark:bg-slate-700" />
-            </div>
-            
             <div className="flex items-center gap-2 sm:gap-4 bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-700">
                <NotificationCenter />
                <ThemeToggle />
@@ -111,13 +100,6 @@ export default function TeacherDashboard() {
               className="md:hidden overflow-hidden bg-white/95 dark:bg-slate-900/95 border-t border-slate-200 dark:border-slate-800 mt-4 -mx-4 sm:-mx-6 px-4 sm:px-6"
             >
               <div className="flex flex-col gap-1 py-4">
-                <Link to="/teacher/analytics" className="flex items-center gap-3 p-3 text-slate-600 dark:text-slate-300 font-bold hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all" onClick={() => setIsMobileMenuOpen(false)}>
-                  <BarChart2 size={20} /> Analitik
-                </Link>
-                <Link to="/teacher/learning-paths" className="flex items-center gap-3 p-3 text-slate-600 dark:text-slate-300 font-bold hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl transition-all" onClick={() => setIsMobileMenuOpen(false)}>
-                  <Layers size={20} /> Yol Haritaları
-                </Link>
-                <div className="h-px bg-slate-200 dark:bg-slate-800 my-2" />
                 <div className="flex items-center gap-3 p-3">
                   <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex shrink-0 items-center justify-center font-bold">
                     {user?.fullName?.[0]}

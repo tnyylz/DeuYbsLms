@@ -4,11 +4,13 @@ import { Award, ChevronLeft, Calendar, FileCheck, ExternalLink } from 'lucide-re
 import { getMyCertificatesApi } from '../../api/certificate.api';
 import ThemeToggle from '../../components/shared/ThemeToggle';
 import type { CertificateDto } from '../../types';
+import { CertificateModal } from '../../components/shared/CertificateModal';
 
 export default function CertificatesPage() {
   const navigate = useNavigate();
   const [certificates, setCertificates] = useState<CertificateDto[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCertificate, setSelectedCertificate] = useState<CertificateDto | null>(null);
 
   useEffect(() => {
     const fetchCertificates = async () => {
@@ -133,14 +135,18 @@ export default function CertificatesPage() {
                   </div>
 
                   <div className="flex gap-3">
-                    <button className="flex-1 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold py-3 px-4 rounded-xl transition-colors text-sm text-center">
+                    <button 
+                      onClick={() => setSelectedCertificate(cert)}
+                      className="flex-1 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-semibold py-3 px-4 rounded-xl transition-colors text-sm text-center cursor-pointer"
+                    >
                       Detayları Görüntüle
                     </button>
-                    {cert.pdfStoragePath && (
-                      <button className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 dark:from-emerald-600 dark:to-teal-600 text-white font-semibold py-3 px-4 rounded-xl transition-colors shadow-sm text-sm text-center">
-                        PDF İndir
-                      </button>
-                    )}
+                    <button 
+                      onClick={() => setSelectedCertificate(cert)}
+                      className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 dark:from-emerald-600 dark:to-teal-600 text-white font-semibold py-3 px-4 rounded-xl transition-colors shadow-sm text-sm text-center cursor-pointer"
+                    >
+                      PDF İndir
+                    </button>
                   </div>
                 </div>
               </div>
@@ -148,6 +154,13 @@ export default function CertificatesPage() {
           </div>
         )}
       </div>
+
+      {selectedCertificate && (
+        <CertificateModal 
+          certificate={selectedCertificate} 
+          onClose={() => setSelectedCertificate(null)} 
+        />
+      )}
     </div>
   );
 }

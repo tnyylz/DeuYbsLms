@@ -2,8 +2,11 @@
 
 import axios from 'axios';
 
+const isProduction = import.meta.env.PROD;
+const baseURL = isProduction ? 'https://api.ybsportal.site/api' : 'https://localhost:7096/api';
+
 const axiosInstance = axios.create({
-  baseURL: 'https://localhost:7096/api',
+  baseURL,
 });
 
 axiosInstance.interceptors.request.use((config) => {

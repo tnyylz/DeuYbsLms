@@ -87,7 +87,7 @@ export default function SkillTreePage() {
                 <BookOpen className="text-indigo-600 dark:text-indigo-400" size={20} />
               </div>
               <span className="font-bold tracking-tight text-slate-900 dark:text-white text-xl">
-                DEÜ YBS <span className="text-indigo-600 dark:text-indigo-400">LMS</span>
+                YBS <span className="text-indigo-600 dark:text-indigo-400">Portal</span>
               </span>
             </div>
             <ThemeToggle />

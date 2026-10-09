@@ -14,10 +14,12 @@ namespace DeuYbsLms.API.Controllers;
 public class TeacherController : ControllerBase
 {
     private readonly ITeacherService _teacherService;
+    private readonly IAdminService _adminService;
 
-    public TeacherController(ITeacherService teacherService)
+    public TeacherController(ITeacherService teacherService, IAdminService adminService)
     {
         _teacherService = teacherService;
+        _adminService = adminService;
     }
 
     private Guid GetUserId()
@@ -44,6 +46,21 @@ public class TeacherController : ControllerBase
     public async Task<IActionResult> GetCourseAnalytics(Guid courseId)
     {
         var analytics = await _teacherService.GetCourseAnalyticsAsync(courseId);
+        return Ok(analytics);
+    }
+
+    [HttpGet("courses/{courseId:guid}/analytics")]
+    public async Task<IActionResult> GetCourseAnalyticsDetail(Guid courseId)
+    {
+        // First check if this course belongs to the logged-in teacher
+        var isOwner = await _teacherService.IsTeacherCourseOwnerAsync(courseId, GetUserId());
+        if (!isOwner)
+        {
+            return Forbid();
+        }
+
+        // Return the exact same rich analytics DTO as the admin panel
+        var analytics = await _adminService.GetCourseAnalyticsAsync(courseId);
         return Ok(analytics);
     }
 }

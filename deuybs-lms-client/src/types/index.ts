@@ -61,6 +61,8 @@ export interface CourseDetailDto {
   teacherName: string;
   lessons: LessonDto[];
   tags: string[];
+  hasFinalExam?: boolean;
+  finalExamMinPassingScore?: number;
   isPublished: boolean;
 }
 
@@ -110,6 +112,8 @@ export interface CourseProgressDto {
   completionPercentage: number;
   isCompleted: boolean;
   lessonProgresses: LessonProgressDto[];
+  isFinalExamPassed?: boolean;
+  lastFinalExamScore?: number;
 }
 
 export interface EnrollmentDto {
@@ -147,10 +151,10 @@ export interface QuizResultDto {
   attemptCount: number;
   nextLessonUnlocked: boolean;
   nextLessonId?: string;
+  isCourseCompleted: boolean;
+  earnedBadge?: string;
   xpResult?: XpResultDto;
-  message: string;
-  isCourseCompleted?: boolean;
-  earnedBadge?: string | null;
+  enrollmentId?: string;
 }
 
 export interface QuestionDto {
@@ -219,6 +223,8 @@ export interface LeaderboardDto {
   profilePictureUrl?: string;
   totalXp: number;
   level: number;
+  profileFrameColor?: string | null;
+  currentTitle?: string | null;
 }
 
 // ===== SHOP =====
@@ -239,6 +245,7 @@ export interface UserInventoryItem {
   itemType: string;
   iconEmoji: string;
   isUsed: boolean;
+  isEquipped: boolean;
   purchasedAt: string;
 }
 
@@ -291,6 +298,7 @@ export interface StudentProfileDto {
 export interface UpdateProfileRequest {
   firstName: string;
   lastName: string;
+  email: string;
   studentNumber?: string;
   profilePictureUrl?: string;
 }
@@ -334,7 +342,9 @@ export interface CreateLessonRequest {
 }
 
 export interface CreateQuizRequest {
-  lessonId: string;
+  title?: string;
+  lessonId?: string;
+  courseId?: string;
   minimumPassingScore: number;
   questions: CreateQuestionRequest[];
 }
@@ -354,6 +364,7 @@ export interface CertificateDto {
   id: string;
   studentName: string;
   courseTitle: string;
+  teacherName: string;
   uniqueVerificationCode: string;
   issuedAt: string;
   pdfStoragePath?: string;

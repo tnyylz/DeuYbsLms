@@ -135,6 +135,20 @@ public class AdminController : ControllerBase
         }
     }
 
+    [HttpGet("courses/{courseId:guid}/analytics")]
+    public async Task<IActionResult> GetCourseAnalytics(Guid courseId)
+    {
+        try
+        {
+            var analytics = await _adminService.GetCourseAnalyticsAsync(courseId);
+            return Ok(analytics);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
     // --- Challenge Management ---
 
     [HttpGet("challenges")]

@@ -2,6 +2,12 @@
 
 import axiosInstance from './axiosInstance';
 import type { TeacherDashboardDto, StudentAnalyticsDto, CreateCourseRequest, CreateLessonRequest, CreateQuizRequest } from '../types';
+import type { AdminCourseAnalytics } from './admin';
+
+export const getCourseAnalyticsDetailApi = async (courseId: string): Promise<AdminCourseAnalytics> => {
+  const res = await axiosInstance.get(`/Teacher/courses/${courseId}/analytics`);
+  return res.data;
+};
 
 export const getTeacherDashboardApi = async (): Promise<TeacherDashboardDto> => {
   const res = await axiosInstance.get('/Teacher/dashboard');

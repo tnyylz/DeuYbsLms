@@ -15,4 +15,6 @@ public class CourseDetailDto
     public List<LessonDto> Lessons { get; set; } = new();
     public List<string> Tags { get; set; } = new();
     public bool IsPublished { get; set; }
+    public bool HasFinalExam { get; set; }
+    public int? FinalExamMinPassingScore { get; set; }
 }

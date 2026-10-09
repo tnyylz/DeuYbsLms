@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 // Public
 import LandingPage from './pages/public/LandingPage';
 import LoginPage from './pages/public/LoginPage';
+import VerifyCertificatePage from './pages/public/VerifyCertificatePage';
 
 // Student
 import StudentDashboard from './pages/student/StudentDashboard';
@@ -29,6 +30,8 @@ import TeacherCourseDetailPage from './pages/teacher/TeacherCourseDetailPage';
 import TeacherLessonBuilder from './pages/teacher/TeacherLessonBuilder';
 import AnalyticsPage from './pages/teacher/AnalyticsPage';
 
+import TeacherFinalExamBuilder from './pages/teacher/TeacherFinalExamBuilder';
+
 // Admin
 import AdminLayout from './components/layout/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
@@ -38,6 +41,7 @@ import AnnouncementManagement from './pages/admin/AnnouncementManagement.tsx';
 import ChallengeManagement from './pages/admin/ChallengeManagement';
 import ShopManagement from './pages/admin/ShopManagement';
 import GlobalAnnouncement from './components/shared/GlobalAnnouncement';
+import AdminCourseAnalyticsPage from './pages/admin/AdminCourseAnalyticsPage';
 
 import { Toaster } from 'react-hot-toast';
 
@@ -50,6 +54,7 @@ export default function App() {
         {/* Public */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/verify/:code" element={<VerifyCertificatePage />} />
 
         {/* Student */}
         <Route path="/student/dashboard" element={<ProtectedRoute role="Student"><StudentDashboard /></ProtectedRoute>} />
@@ -57,6 +62,7 @@ export default function App() {
         <Route path="/course/:courseId/detail" element={<ProtectedRoute role="Student"><CourseDetailPage /></ProtectedRoute>} />
         <Route path="/course/:courseId/skill-tree" element={<ProtectedRoute role="Student"><SkillTreePage /></ProtectedRoute>} />
         <Route path="/course/:courseId/lesson/:lessonId" element={<ProtectedRoute role="Student"><LearningRoom /></ProtectedRoute>} />
+        <Route path="/course/:courseId/final-exam" element={<ProtectedRoute role="Student"><LearningRoom isFinalExam={true} /></ProtectedRoute>} />
         <Route path="/student/certificates" element={<ProtectedRoute role="Student"><CertificatesPage /></ProtectedRoute>} />
         <Route path="/student/shop" element={<ProtectedRoute role="Student"><ShopPage /></ProtectedRoute>} />
         <Route path="/student/profile" element={<ProtectedRoute role="Student"><ProfilePage /></ProtectedRoute>} />
@@ -73,6 +79,7 @@ export default function App() {
         <Route path="/teacher/course/:courseId" element={<ProtectedRoute role="Teacher"><TeacherCourseDetailPage /></ProtectedRoute>} />
         <Route path="/teacher/course/:courseId/lesson/new" element={<ProtectedRoute role="Teacher"><TeacherLessonBuilder /></ProtectedRoute>} />
         <Route path="/teacher/course/:courseId/lesson/:lessonId" element={<ProtectedRoute role="Teacher"><TeacherLessonBuilder /></ProtectedRoute>} />
+        <Route path="/teacher/course/:courseId/final-exam" element={<ProtectedRoute role="Teacher"><TeacherFinalExamBuilder /></ProtectedRoute>} />
         <Route path="/teacher/analytics" element={<ProtectedRoute role="Teacher"><AnalyticsPage /></ProtectedRoute>} />
         <Route path="/teacher/analytics/:courseId" element={<ProtectedRoute role="Teacher"><AnalyticsPage /></ProtectedRoute>} />
 
@@ -82,6 +89,7 @@ export default function App() {
           <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="users" element={<UserManagement />} />
           <Route path="courses" element={<CourseList />} />
+          <Route path="courses/:courseId/analytics" element={<AdminCourseAnalyticsPage />} />
           <Route path="announcements" element={<AnnouncementManagement />} />
           <Route path="challenges" element={<ChallengeManagement />} />
           <Route path="shop" element={<ShopManagement />} />

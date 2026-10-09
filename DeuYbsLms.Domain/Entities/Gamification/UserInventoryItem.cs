@@ -12,5 +12,6 @@ public class UserInventoryItem : BaseEntity
     public ShopItem ShopItem { get; set; } = null!;
 
     public bool IsUsed { get; set; } = false;
+    public bool IsEquipped { get; set; } = false;
     public DateTime PurchasedAt { get; set; } = DateTime.UtcNow;
 }

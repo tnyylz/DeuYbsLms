@@ -8,4 +8,6 @@ public class LeaderboardDto
     public string? ProfilePictureUrl { get; set; }
     public int TotalXp { get; set; }
     public int Level { get; set; }
+    public string? ProfileFrameColor { get; set; }
+    public string? CurrentTitle { get; set; }
 }

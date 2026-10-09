@@ -19,6 +19,7 @@ public class StudentProfileDto
     public double AverageQuizScore { get; set; }
     public int CoursesCompletedCount { get; set; }
     public int TotalCertificatesCount { get; set; }
+    public int GradeLevel { get; set; }
     
     public List<BadgeDto> Badges { get; set; } = new();
 }

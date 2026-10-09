@@ -26,4 +26,12 @@ public class QuizRepository : Repository<Quiz>, IQuizRepository
                 .ThenInclude(qs => qs.AnswerOptions)
             .FirstOrDefaultAsync(q => q.LessonId == lessonId);
     }
+
+    public async Task<Quiz?> GetQuizByCourseIdAsync(Guid courseId)
+    {
+        return await _context.Quizzes
+            .Include(q => q.Questions)
+                .ThenInclude(qs => qs.AnswerOptions)
+            .FirstOrDefaultAsync(q => q.CourseId == courseId);
+    }
 }

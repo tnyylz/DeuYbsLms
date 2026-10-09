@@ -145,7 +145,7 @@ export default function CourseDetailPage() {
                 <BookOpen className="text-white" size={20} />
               </div>
               <span className="font-bold tracking-tight text-slate-900 dark:text-white text-xl">
-                DEÜ YBS <span className="text-indigo-600 dark:text-indigo-400">LMS</span>
+                YBS <span className="text-indigo-600 dark:text-indigo-400">Portal</span>
               </span>
             </div>
           </div>
@@ -258,6 +258,38 @@ export default function CourseDetailPage() {
                     </div>
                   );
                 })}
+                {course.hasFinalExam && progress && (
+                  <div 
+                    onClick={() => {
+                      if (progress.completedLessons < course.lessons.length) {
+                        toast.error(`Final sınavına girmek için tüm dersleri tamamlamalısınız. (${progress.completedLessons} / ${course.lessons.length} tamamlandı)`);
+                      } else {
+                        navigate(`/course/${courseId}/final-exam`);
+                      }
+                    }}
+                    className={`p-6 flex items-center gap-5 transition-all cursor-pointer hover:bg-violet-50/50 dark:hover:bg-violet-900/20 ${progress.completedLessons === course.lessons.length ? '' : 'opacity-60'}`}
+                  >
+                      <div className={`w-10 h-10 rounded-2xl border font-bold flex items-center justify-center shrink-0 transition-colors ${progress.isFinalExamPassed ? 'bg-emerald-50 dark:bg-emerald-900/40 border-emerald-100 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400' : 'bg-violet-50 dark:bg-violet-800/40 border-violet-200 dark:border-violet-700/50 text-violet-500 dark:text-violet-400'}`}>
+                        {progress.isFinalExamPassed ? <CheckCircle size={20} /> : <Target size={20} />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className={`font-bold transition-colors ${progress.completedLessons === course.lessons.length ? 'text-violet-700 dark:text-violet-300' : 'text-slate-400 dark:text-slate-600'}`}>Final Sınavı</h3>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-3 font-semibold">
+                          <span className="text-emerald-500 dark:text-emerald-400">Sertifika Sınavı</span>
+                        </p>
+                      </div>
+                      {progress.completedLessons < course.lessons.length && (
+                        <div className="text-slate-300">
+                          <Zap size={20} className="grayscale" />
+                        </div>
+                      )}
+                      {progress.completedLessons === course.lessons.length && (
+                         <div className="text-violet-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Play size={18} fill="currentColor" />
+                         </div>
+                      )}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -276,7 +308,7 @@ export default function CourseDetailPage() {
               </div>
 
               <div className="relative space-y-4 text-center">
-                {progress?.completionPercentage === 100 || progress?.isCompleted ? (
+                {progress?.isCompleted ? (
                     <button 
                       onClick={handleClaimCertificate}
                       className="w-full bg-emerald-500 hover:bg-emerald-600 border-2 border-emerald-500 hover:border-emerald-600 text-white font-bold py-5 px-6 rounded-[24px] transition-all flex items-center justify-center gap-3 shadow-xl shadow-emerald-200 dark:shadow-none hover:-translate-y-1"

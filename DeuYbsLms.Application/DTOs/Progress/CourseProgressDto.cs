@@ -10,5 +10,7 @@ public class CourseProgressDto
     public int CompletedLessons { get; set; }
     public double CompletionPercentage { get; set; }
     public bool IsCompleted { get; set; }
+    public bool IsFinalExamPassed { get; set; }
+    public double? LastFinalExamScore { get; set; }
     public List<LessonProgressDto> LessonProgresses { get; set; } = new();
 }

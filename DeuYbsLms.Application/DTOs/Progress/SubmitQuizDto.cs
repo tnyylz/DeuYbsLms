@@ -1,10 +1,11 @@
-﻿// Path: DeuYbsLms.Application/DTOs/Progress/SubmitQuizDto.cs
+// Path: DeuYbsLms.Application/DTOs/Progress/SubmitQuizDto.cs
 
 namespace DeuYbsLms.Application.DTOs.Progress;
 
 public class SubmitQuizDto
 {
-    public Guid LessonId { get; set; }
+    public Guid? LessonId { get; set; }
+    public Guid? CourseId { get; set; }
     public List<QuizAnswerDto> Answers { get; set; } = new();
 }
 

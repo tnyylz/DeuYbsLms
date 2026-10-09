@@ -2,7 +2,7 @@ import axiosInstance from './axiosInstance';
 import type { CertificateDto } from '../types';
 
 export const getMyCertificatesApi = async (): Promise<CertificateDto[]> => {
-  const { data } = await axiosInstance.get<CertificateDto[]>('/Certificate/my-certificates');
+  const { data } = await axiosInstance.get<CertificateDto[]>(`/Certificate/my-certificates?_t=${new Date().getTime()}`);
   return data;
 };
 

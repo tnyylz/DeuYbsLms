@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { BookOpen, Zap, ChevronLeft, Clock, Target, Info, Edit3, PlusCircle, Save, X, Trash2, Image as ImageIcon } from 'lucide-react';
 import { getCourseDetailApi } from '../../api/courses.api';
-import { updateCourseApi, deleteLessonApi } from '../../api/teacher.api';
+import { updateCourseApi, deleteLessonApi, uploadThumbnailApi } from '../../api/teacher.api';
 import { getFileUrl } from '../../utils/fileUtils';
 import ThemeToggle from '../../components/shared/ThemeToggle';
 import type { CourseDetailDto, LessonDto } from '../../types';
@@ -18,6 +18,38 @@ export default function TeacherCourseDetailPage() {
   // Inline edit states
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Partial<CourseDetailDto>>({});
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !course) return;
+    const file = files[0];
+    try {
+      setUploadingImage(true);
+      const uploadedUrl = await uploadThumbnailApi(file);
+      
+      const payload = {
+        title: course.title,
+        description: course.description,
+        level: course.level,
+        totalXpReward: course.totalXpReward,
+        tags: course.tags,
+        thumbnailUrl: uploadedUrl,
+        isPublished: course.isPublished
+      };
+      
+      await updateCourseApi(courseId!, payload);
+      toast.success('Kurs görseli başarıyla güncellendi.');
+      await fetchData();
+    } catch (err) {
+      console.error(err);
+      toast.error('Görsel yüklenirken bir hata oldu.');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const fetchData = async () => {
     if (!courseId) return;
@@ -249,14 +281,67 @@ export default function TeacherCourseDetailPage() {
               </div>
             </div>
 
-            {course.thumbnailUrl ? (
-              <div className="w-full h-80 rounded-[40px] overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl transition-colors relative group">
-                 <img src={getFileUrl(course.thumbnailUrl)} alt={course.title} className="w-full h-full object-cover" />
-                 <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <button onClick={() => navigate(`/teacher/course-builder/${courseId}`)} className="bg-white text-slate-900 px-6 py-3 rounded-2xl font-bold flex items-center gap-2 shadow-xl hover:scale-105 transition-transform"><ImageIcon size={20}/> Kapağı Değiştir (Temel Ayarlar)</button>
-                 </div>
-              </div>
-            ) : null}
+            {/* Thumbnail Upload/View block */}
+            <div className="w-full">
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleImageChange} 
+                accept="image/*" 
+                className="hidden" 
+              />
+              
+              {course.thumbnailUrl ? (
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full h-80 rounded-[40px] overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl transition-all relative group cursor-pointer"
+                >
+                  <img src={getFileUrl(course.thumbnailUrl)} alt={course.title} className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" />
+                  
+                  {/* Hover Glass Overlay */}
+                  <div className="absolute inset-0 bg-slate-950/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center backdrop-blur-[2px]">
+                    <div className="bg-white/95 dark:bg-slate-900/95 text-slate-900 dark:text-white px-6 py-3.5 rounded-[20px] font-black text-sm flex items-center gap-2 shadow-2xl hover:scale-105 transition-all">
+                      <ImageIcon size={18} className="text-indigo-600 dark:text-indigo-400" />
+                      <span>Kapağı Değiştir</span>
+                    </div>
+                  </div>
+                  
+                  {/* Uploading loading mask */}
+                  {uploadingImage && (
+                    <div className="absolute inset-0 bg-slate-950/80 flex flex-col items-center justify-center text-white z-10">
+                      <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4" />
+                      <p className="font-extrabold tracking-wide text-sm animate-pulse text-indigo-200">Görsel Yükleniyor...</p>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full h-80 rounded-[40px] border-2 border-dashed border-indigo-200 dark:border-indigo-800/80 bg-gradient-to-br from-indigo-50/30 to-purple-50/30 dark:from-indigo-950/10 dark:to-purple-950/10 hover:border-indigo-400 dark:hover:border-indigo-600 transition-all duration-300 flex flex-col items-center justify-center p-8 text-center cursor-pointer relative group overflow-hidden shadow-sm"
+                >
+                  {/* Premium floating background decorations */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-200/20 dark:bg-indigo-600/5 rounded-full blur-2xl -mr-16 -mt-16 opacity-50 group-hover:scale-110 transition-transform"></div>
+                  
+                  <div className="relative flex flex-col items-center">
+                    <div className="w-16 h-16 rounded-2xl bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shadow-lg group-hover:-translate-y-1.5 transition-transform duration-300 mb-4">
+                      <ImageIcon size={28} />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">Kurs Görseli Ekle</h3>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 max-w-sm font-semibold leading-relaxed">
+                      Öğrencilerin ilgisini çekecek yüksek kaliteli bir kapak görseli yükleyin (önerilen: 16:9 oranında).
+                    </p>
+                  </div>
+                  
+                  {/* Uploading loading mask */}
+                  {uploadingImage && (
+                    <div className="absolute inset-0 bg-slate-950/80 flex flex-col items-center justify-center text-white z-10">
+                      <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-4" />
+                      <p className="font-extrabold tracking-wide text-sm animate-pulse text-indigo-200">Görsel Yükleniyor...</p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
@@ -335,6 +420,14 @@ export default function TeacherCourseDetailPage() {
                   >
                     <PlusCircle size={20} />
                     <span>Yeni Ders Ekle</span>
+                  </button>
+
+                  <button 
+                    onClick={() => navigate(`/teacher/course/${courseId}/final-exam`)}
+                    className="w-full bg-violet-600 hover:bg-violet-700 text-white font-bold py-5 px-6 rounded-[24px] transition-all flex items-center justify-center gap-3 shadow-xl shadow-violet-200 dark:shadow-none hover:-translate-y-1 relative group"
+                  >
+                    <Target size={20} />
+                    <span>{course.hasFinalExam ? 'Final Sınavını Düzenle' : 'Final Sınavı Ekle'}</span>
                   </button>
                   
                   <button 

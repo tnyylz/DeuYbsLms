@@ -104,4 +104,9 @@ public class TeacherService : ITeacherService
 
         return allAnalytics;
     }
+    
+    public async Task<bool> IsTeacherCourseOwnerAsync(Guid courseId, Guid teacherId)
+    {
+        return await _context.Courses.AnyAsync(c => c.Id == courseId && c.TeacherId == teacherId);
+    }
 }
